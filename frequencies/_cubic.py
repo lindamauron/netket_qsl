@@ -2,9 +2,9 @@ import numpy as np
 
 from scipy.interpolate import interp1d
 
+from .base import Frequency
 
-
-def cubic_sweep(sweep_time):
+def cubic_sweep(sweep_time, fMin = -8, fMax = 9.4):
     '''
     Cubic part of the Δ sweep
     sweep_time : total time of the experiment (in μs)
@@ -14,18 +14,18 @@ def cubic_sweep(sweep_time):
     
     # find the polynomial so we can go further than sweep_time
     # these choices are the most used ones, so we saved the coefficients
-    if sweep_time == 2.5:
+    if sweep_time == 2.5 and fMin==-8 and fMax==9.4:
         f = np.array([52.2811409 , -245.24908958,  385.23213891, -186.70318457]) #polynomial coefficients (in rad/s) for sweep_time=2.5 
     
-    elif sweep_time==25:
+    elif sweep_time==25 and fMin==-8 and fMax==9.4:
         f = np.array([ 5.22811409e-02, -2.45249090e+00,  3.85232139e+01, -1.86703185e+02]) ##polynomial coefficients (in rad/s) for sweep_time=25 
     
     # for another sweep_time, we have to find the sweep from scratch
     else:
         tTotal = sweep_time*4/5
         tInf = sweep_time*4/5/2
-        fMin = -8
-        fMax = 9.4
+        #fMin = -8
+        #fMax = 9.4
         fInf = 2.4
         slope = 0.4/sweep_time*2.5
         midT = 0.05*sweep_time/2.5
@@ -49,35 +49,35 @@ def cubic_sweep(sweep_time):
 
     
 
-class Frequencies:
+class Cubic(Frequency):
     '''
-    Defines the frequencies schedules Ω(t) and Δ(t) for a given sweep_time.
-    Allows to get both frequencies at the time we want. The functions are vectoized and can be used outside the time range [0,sweep_time].
+    Defines the cubic frequencies schedules Ω(t) and Δ(t) for a given sweep_time.
+    Allows to get both frequencies at the time we want. The functions are vectorized and can be used outside the time range [0,sweep_time].
     It is also possible to integrate and derivate the frequencies over any time interval. 
-    '''
-    def __repr__(self):
-        return f'Ω,Δ(T={self.sweep_time})'
+
+    The general aspect of the schedule is as follows :
+    Omega(t) :
+            - [0,sweep_time/5] : linear increase from 0 to Omega
+            - [sweep_time/5,infty] : constant at Omega
+    Delta(t) :
+            - [0,sweep_time/5] : constant at fMin
+            - [sweep_time/5,infty] : cubic increase
+    '''   
     
-    def __init__(self, sweep_time):
+    def __init__(self, sweep_time, Omega=1.4, fMin=-8, fMax=9.4):
         '''
         sweep_time : total time of the experiment (in μs)
-                     This corresponds to the time where Δ/2π = 9.6
+        Omega : final constant value of Omega(t>sweep_time/5)
+        fMin : minimal (initial) value of Delta
+        fMax : maxima (final) value of Delta
         '''
-        self.sweep_time = sweep_time
-        self.sweep, self.f = cubic_sweep(sweep_time)
-        
-        self.Ωf = self.Ω(sweep_time)
-        
-    def Ω(self, t):
-        '''
-        Defines the default Ω schedule for the time evolution over a total sweep_time
-        t : time of the evolution (in μs)
+        super().__init__(sweep_time, Omega)
+        self.sweep, self.f = cubic_sweep(sweep_time,fMin,fMax)
+        self.Dmin = 2*np.pi*fMin
+        self.Dmax = 2*np.pi*fMax
 
-        return : corresponding Ω (in Mrad/μs)
-        '''
-        flag = (t < self.sweep_time/5)
-        return 2.8*t *2*np.pi/self.sweep_time*2.5*flag + 1.4*2*np.pi*(1-flag)
-
+    def __repr__(self):
+        return 'CubicSweep(' + super().__repr__()+ f'[{self.Dmin/2/np.pi},{self.Dmax/2/np.pi}])'
 
     def Δ(self, t):
         '''
@@ -87,54 +87,8 @@ class Frequencies:
         return : corresponding Δ (in Mrad/μs)
         '''
         flag = (t < self.sweep_time/5)
-        return -2*np.pi*8*(flag) + (1 - flag)*self.sweep(t)
-        
-        
- 
-    def __call__(self, t):
-        '''
-        Computes both frequencies at time t
-        t : time of the evolution (in μs)
-
-        return : corresponding Ω,Δ (in Mrad/μs)        
-        '''
-        return self.Ω(t), self.Δ(t)
-        
-        
-    def relative(self, t):
-        '''
-        Computes both frequencies at time t relative to the final Ω
-        t : time of the evolution (in μs)
-
-        return : corresponding Ω/Ωf,Δ/Ωf (no unity)        
-        '''   
-        return self.Ω(t)/self.Ωf, self.Δ(t)/self.Ωf
+        return self.Dmin*(flag) + (1 - flag)*self.sweep(t)
     
-    def herz(self, t):
-        '''
-        Computes both frequencies at time t in MHz
-        t : time of the evolution (in μs)
-
-        return : corresponding Ω/2π,Δ/2π (MHz)        
-        '''
-        return self.Ω(t)/2/np.pi, self.Δ(t)/2/np.pi
-
-    def mean_Omega(self, t1, t2):
-        r'''
-        Does the operation $\int_t1^t2 Ω(τ) dτ$
-        t1 : smallest time (μs)
-        t2 : highest time (μs)
-
-        returns : mean of Ω (rad)
-        '''
-        T = self.sweep_time/5
-        if t1 < T:
-            if t2 < T:
-                return 2*np.pi*1.4 * (t2+t1)/2/T
-            else:
-                return 2*np.pi*1.4 * (t2 - 0.5*T - 0.5*t1**2/T)/(t2-t1)
-        else:
-            return 2*np.pi*1.4
         
     def mean_Delta(self, t1, t2):
         r'''
@@ -153,7 +107,81 @@ class Frequencies:
             if t1 > T:
                 return (F(t2)-F(t1) )/(t2-t1)
             else:
-                return (F(t2)-F(T) - 2*np.pi*8*(T-t1))/(t2-t1)
+                return (F(t2)-F(T) + self.Dmin*(T-t1))/(t2-t1)
         else:
-            return -2*np.pi*8
+            return self.Dmin
     
+
+def linear_sweep(sweep_time,fMin,fMax):
+    slope = (fMax-fMin)/(4*sweep_time/5)
+    offset = fMin - slope*sweep_time/5
+    f = 2*np.pi*np.array([slope,offset])
+
+    return lambda t : (f[0]*t+f[1]), f
+
+
+
+class Linear(Frequency):
+    '''
+    Defines the cubic frequencies schedules Ω(t) and Δ(t) for a given sweep_time.
+    Allows to get both frequencies at the time we want. The functions are vectorized and can be used outside the time range [0,sweep_time].
+    It is also possible to integrate and derivate the frequencies over any time interval. 
+
+    The general aspect of the schedule is as follows :
+    Omega(t) :
+            - [0,sweep_time/5] : linear increase from 0 to Omega
+            - [sweep_time/5,infty] : constant at Omega
+    Delta(t) :
+            - [0,sweep_time/5] : constant at fMin
+            - [sweep_time/5,infty] : linear increase
+    ''' 
+    
+    def __init__(self, sweep_time,Omega=1.4,fMin=-8,fMax=9.4):
+        '''
+        sweep_time : total time of the experiment (in μs)
+        Omega : final constant value of Omega(t>sweep_time/5)
+        fMin : minimal (initial) value of Delta
+        fMax : maxima (final) value of Delta
+        '''
+        super().__init__(sweep_time,Omega)
+        self.sweep, self.f = linear_sweep(sweep_time,fMin,fMax)
+        self.Dmin = 2*np.pi*fMin
+        self.Dmax = 2*np.pi*fMax
+
+    
+    def __repr__(self):
+        return 'Linear sweep(' + super().__repr__()+ ')'
+
+    def Δ(self, t):
+        '''
+        Defines the default Δ schedule for the time evolution over a total sweep_time
+        t : time of the evolution (in μs)
+
+        return : corresponding Δ (in Mrad/μs)
+        '''
+        flag = (t < self.sweep_time/5)
+        return self.Dmin*(flag) + (1 - flag)*self.sweep(t)
+        
+
+    def mean_Delta(self, t1, t2):
+        r'''
+        Does the operation $\int_t1^t2 Δ(τ) dτ$
+        t1 : smallest time (μs)
+        t2 : highest time (μs)
+
+        returns : mean of Δ (rad)
+        '''
+        
+        T = self.sweep_time/5
+        
+        if t2 > T:
+            def F(t):
+                return self.f[0]/2*t**2 + self.f[1]*t
+            if t1 > T:
+                return (F(t2)-F(t1) )/(t2-t1)
+            else:
+                return (F(t2)-F(T) + self.Dmin*(T-t1))/(t2-t1)
+        else:
+            return self.Dmin
+    
+

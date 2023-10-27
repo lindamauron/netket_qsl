@@ -65,6 +65,7 @@ class Kagome:
         self._graph = None
         self._distances = None
         self._neighbors_distances = None
+        self._n_distances = None
         
         
     # Construction methods (are called at init in any case)
@@ -484,6 +485,18 @@ class Kagome:
         return nn
     
     @property
+    def n_distances(self):
+        '''
+        Number of different distances existing on the lattice (i.e. number of different values in neighbors_distances)
+
+        return : float () with the number of distances 
+        '''
+        if self._n_distances is None:
+            self.neighbors_distances
+        
+        return self._n_distances
+
+    @property
     def neighbors_distances(self):
         '''
         Distance in terms of number of neighbor tensor between the atoms (taking periodiciy into account)
@@ -504,7 +517,7 @@ class Kagome:
                     neighbors_distances[i,j] = np.argmin( np.abs(dist[i,j] - neighbors) )
             self._neighbors_distances = neighbors_distances
 
-            self.n_neighbors = np.max(neighbors_distances)
+            self._n_distances = np.max(neighbors_distances)+1
         return self._neighbors_distances
 
 

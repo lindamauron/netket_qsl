@@ -1,7 +1,10 @@
 import numpy as np 
 
-from ..frequencies import Frequencies
+from ..frequencies import Frequency as _Frequency
+from ..frequencies import Cubic
 from ._usual import X, r_occ
+from ..lattice import Kagome as _Kagome
+from netket.hilbert import Spin as _SpinHilbert
 
 """ 
 Defines all the operators needed in the Z basis, so that there is no need to define them in code
@@ -18,7 +21,7 @@ In general, call :
 #######################################################################################################################
 #################################################### Hamiltonians #####################################################
 #######################################################################################################################
-def potential(hi, lattice, Rb=2.4, Rcut=np.sqrt(7)):
+def potential(hi:_SpinHilbert, lattice:_Kagome, Rb:float=2.4, Rcut:float=np.sqrt(7)):
     '''
     Returns the potential operator of the lattice i.e. V/Ω = sum (Rb/rij)^6 ni nj so that there is no dependence on time
     with a rydberg blockade at Rb, interactions up to Rcut
@@ -40,8 +43,17 @@ def potential(hi, lattice, Rb=2.4, Rcut=np.sqrt(7)):
         Rcut = 100*np.max(lattice.distances) # put it to something bigger than the lattice => all interactions are taken
     else:
         Rcut *= lattice.a
-        
-        
+
+    # Construct the interaction matrix by precomputing the distances ratio up to a cut-off
+    # we define our matrix R_ij = (Rb/rij)^6 for rij < Rcut but with zeros on the diagonal 
+    # it will be used for every update, so we do not compute it every time
+    R = lattice.distances
+    np.fill_diagonal(R, 1)
+    R = (Rb/R)**6
+    R[lattice.distances>Rcut] = 0
+    np.fill_diagonal(R, 0)
+    R = R    
+
     V = 0
     d = lattice.distances
 
@@ -53,7 +65,7 @@ def potential(hi, lattice, Rb=2.4, Rcut=np.sqrt(7)):
             if d[i,j] <= Rcut:
                 V += r_occ(hi,i)*r_occ(hi,j) * (Rb/d[i,j])**6
                     
-    return V
+    return V, R
 
 class Hamiltionian:
     '''
@@ -66,38 +78,16 @@ class Hamiltionian:
 
     Hamiltonian(t) can be called
     '''
-    def __init__(self, hi, lattice, sweep_time=2.5, Rb=2.4, Rcut=None):
+    def __init__(self, hi:_SpinHilbert, lattice:_Kagome, frequencies:_Frequency=Cubic(2.5), Rb:float=2.4, Rcut:float=None):
         '''
         Constructs the hamiltonian instance, with a rydberg blockade at Rb, interactions up to Rcut
         hi : hilbert space of the system
         lattice : lattice on which the operator should act
-        sweep_time : whole duration of the time evolution
+        frequencies : callable giving both frequencies Ω, Δ at a given time
         Rcut : range of the potential
                 if r_ij > Rcut, V_ij = 0
         Rb : Rydberg blockade radius in units of a (lattice vector)
         '''
-        # Infos of the operator
-        self.str = f'Hamiltonian({lattice}, T={sweep_time}, Rb={Rb}, Rcut={Rcut})'
-
-        # express the real length
-        Rb *= lattice.a
-            
-        # range of the interactions
-        if Rcut is None:
-            Rcut = 100*np.max(lattice.distances) # put it to something bigger than the lattice => all interactions are taken
-        else:
-            Rcut *= lattice.a
-
-        # Construct the interaction matrix by precomputing the distances ratio up to a cut-off
-        # we define our matrix R_ij = (Rb/rij)^6 for rij < Rcut but with zeros on the diagonal 
-        # it will be used for every update, so we do not compute it every time
-        R = lattice.distances
-        np.fill_diagonal(R, 1)
-        R = (Rb/R)**6
-        R[lattice.distances>Rcut] = 0
-        np.fill_diagonal(R, 0)
-        self.R = R
-
         N = lattice.N
 
         # The total number of Rydberg excitations on the lattice
@@ -107,10 +97,13 @@ class Hamiltionian:
         self.Xtot_op = sum([X(hi,i) for i in range(N)])
 
         # Potential
-        self.V_op = potential(hi, lattice, Rb, Rcut)
+        self.V_op, self.R = potential(hi, lattice, Rb, Rcut)
 
         # Frequency schedules to be determined only once
-        self.frequencies = Frequencies(sweep_time)
+        self.frequencies = frequencies
+
+        # Infos of the operator
+        self.str = f'Hamiltonian({lattice}, (Ω,Δ)={frequencies}, Rb={Rb}, Rcut={Rcut})'
 
     def __repr__(self):
         '''

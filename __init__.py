@@ -5,11 +5,11 @@ __all__ = [
     "frequencies",
     "utils",
     "rules",
-    #"models",
+    "models",
     "operators",
     "callbacks",
     "toy_model",
-    "driver"
+    "driver", 
 ]
 
 from . import (
@@ -22,9 +22,9 @@ from . import (
 from . import (
     rules, 
     operators,
-    #models,
+    models,
     driver
 )
 
-from .import callbacks
+from . import callbacks
 from . import toy_model

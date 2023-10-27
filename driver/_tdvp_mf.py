@@ -68,7 +68,7 @@ def eval_N(phi,R):
     a = phi[:,0]
     b = phi[:,1]
 
-    return np.sum(b.conj()*b).real
+    return np.sum(b.conj()*b)
 
 def eval_O(phi,R):
 
@@ -76,7 +76,7 @@ def eval_O(phi,R):
     b = phi[:,1]
 
     X_term = -0.5*np.sum(2*a*b.real)
-    b2 = (b.conj()*b).real
+    b2 = (b.conj()*b)
     Z_term = 0.5* b2.T@R@b2
     return X_term + Z_term
 
@@ -166,7 +166,7 @@ class TDVP_MF(AbstractVariationalDriver):
         mean_E = O*O_term - D*N_term + 0j
         #self._loss_stats = Stats(mean=mean_E, variance=_Nan, error_of_mean=0, tau_corr=0, R_hat=0, tau_corr_max=0)
 
-        return Stats(mean=mean_E, variance=_Nan, error_of_mean=0, tau_corr=0, R_hat=0, tau_corr_max=0)
+        return Stats(mean=mean_E, variance=0, error_of_mean=0, tau_corr=0, R_hat=0, tau_corr_max=0)
     
     def _backward(self,t,phi):
         #pars = self.state.parameters
@@ -288,10 +288,12 @@ class TDVP_MF(AbstractVariationalDriver):
             callback: Callable or list of callable callback functions to be executed at each
                 stopping time.
         """
+        self.compute_n = False
         if obs is None:
             obs = {}
         elif np.isin('n', np.fromiter(obs.keys(), dtype='<U3') ):
             self.compute_n = True
+            obs = obs.copy()
             obs.pop('n')
 
         if callback is None:
@@ -390,7 +392,7 @@ class TDVP_MF(AbstractVariationalDriver):
             N = phi.shape[0]
             n_mean = eval_N(phi,self.generator.R)/N +0j
 
-            log_dict['n'] = Stats(mean=n_mean, variance=_Nan, error_of_mean=0, tau_corr=0, R_hat=0, tau_corr_max=0)
+            log_dict['n'] = Stats(mean=n_mean, variance=0, error_of_mean=0, tau_corr=0, R_hat=0, tau_corr_max=0)
 
         log_dict["t"] = self.t
 

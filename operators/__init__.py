@@ -7,6 +7,6 @@ from ._topological import (
     R
 )
 
-from ._usual import X,Y,Z, TopoOps, dimer_probs
+from ._usual import X,Y,Z, TopoOps, dimer_probs, r_density
 
 from ._hamiltonian import Hamiltionian
