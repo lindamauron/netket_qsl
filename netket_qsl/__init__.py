@@ -10,13 +10,15 @@ __all__ = [
     "callbacks",
     "toy_model",
     "driver", 
+    "logging"
 ]
 
 from . import (
     lattice, 
     hilbert, 
     frequencies,
-    utils
+    utils,
+    logging
 )
 
 from . import (
