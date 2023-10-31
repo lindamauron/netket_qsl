@@ -1,0 +1,28 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "netket_qsl"
+version = "0.0.1"
+authors = [
+  { name="Linda Mauron", email="linda.mauron@epfl.ch" },
+]
+description = "Variational simulation of a QSL time-evolution"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "netket~=3.9",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dynamic = ["version"]
+
+[project.urls]
+"Homepage" = "https://github.com/lindamauron/netket_qsl"
+"Bug Tracker" = "https://github.com/lindamauron/netket_qsl/issues"
+
+
