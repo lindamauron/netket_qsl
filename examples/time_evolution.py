@@ -9,10 +9,12 @@ import jax.random as rnd
 key = rnd.PRNGKey(12)
 
 import flax.linen as nn
-init = nn.initializers.normal()
+init = nn.initializers
 
 
 import netket_qsl as qsl
+
+folder = ''
 
 # First, create your lattice
 lattice = qsl.lattice.Torus(1.0, 2, 4) # toy model
@@ -23,12 +25,11 @@ lattice = qsl.lattice.Torus(1.0, 2, 4) # toy model
 N = lattice.N
 
 # Corresponding hilbert space 
-hi = qsl.hilbert.TriangleHilbertSpace(lattice) #restricted for small systems (can also be brought through sampler)
+#hi = qsl.hilbert.TriangleHilbertSpace(lattice) #restricted for small systems (can also be brought through sampler)
 hi = nk.hilbert.Spin(1/2, N) # standard hilbert space
 #hi.all_states()
 
 # Now we define our variational model
-init = nn.initializers
 # chose anything in qsl.models, but for MF evolution, we need a model with an external mean-field (usuallly, JMF..)
 ma = qsl.models.JMF_inv(jastrow_init=init.constant(0), mf_init=init.constant(1), lattice=lattice, n_neighbors=lattice.n_distances )
 # sampler : 
@@ -47,6 +48,7 @@ H = qsl.operators.Hamiltionian(hi,lattice, frequencies)
 # The observables
 n_op = qsl.operators.r_density(hi,lattice)
 P_op,Q_op,R_op = qsl.operators.TopoOps(hi,lattice,hex=0)
+# only on one hexagon as a benchmark
 
 obs = {}
 obs['n'] = n_op
@@ -63,8 +65,8 @@ cbs.append( qsl.callbacks.callback_dimerprobs(lattice) ) # dimer probabilities
 
 
 # The loggers 
-logmf = nk.logging.JsonLog('ResultsMF', save_params=False)
-logvs = qsl.logging.CompleteStateLog('Results', save_every=10, tar=False)
+logmf = nk.logging.JsonLog(folder+'MF', save_params=False)
+logvs = qsl.logging.CompleteStateLog(folder+'states', save_every=10, tar=False)
 
 T_MF = 0.2
 step=1e-2
@@ -86,7 +88,7 @@ te_mf.run(
 
 
 
-logtdvp = nk.logging.JsonLog('ResultsTDVP', save_params=False)
+logtdvp = nk.logging.JsonLog(folder+'TDVP', save_params=False)
 # And once this is done, we do the normal t-VMC
 te = nkx.TDVP(
     H,
@@ -171,5 +173,5 @@ plt.legend(['Monomer', 'Dimer', 'Double dimer'])
 ################################## General Figure and Saving ##################################
 
 plt.tight_layout()
-#plt.savefig(folder+f'time_evolution.png', dpi=200, bbox_inches='tight')
+plt.savefig(folder+f'time_evolution.png', dpi=200, bbox_inches='tight')
 plt.show()
