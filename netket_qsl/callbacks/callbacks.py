@@ -3,20 +3,6 @@ import matplotlib.pyplot as plt
 
 import tensorboardX as tbx
 
-import netket as nk
-
-import jax
-import jax.numpy as jnp
-import jax.random as rnd
-from jax import jit
-
-from scipy.special import logsumexp
-
-from ..operators import dimer_probs
-from ..lattice import Kagome as _Lattice
-from ..driver import TDVP_MF as _TDVPMF
-from netket.experimental import TDVP as _TDVP
-
 #######################################################################################################################
 ################################################## Callback functions #################################################
 #######################################################################################################################

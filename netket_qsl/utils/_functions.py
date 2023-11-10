@@ -1,5 +1,5 @@
 import numpy as np
-
+import orjson
 
 def append_logs(log1, log2, 
                 operators=['Generator', 'n', 'P', 'Q', 'R'], 
@@ -34,6 +34,26 @@ def append_logs(log1, log2,
         new_log[k]['value'] = list( np.append( log1[k]['value'], log2[k]['value']) )
     
     return new_log
+
+def save_log(filename,log):
+    '''
+    saves the log as a filename.log file
+    '''
+    def _serialize(log, outstream):
+        r"""
+        Inner method of `serialize`, working on an IO object.
+        """
+        outstream.write(
+            orjson.dumps(
+                log,
+                option=orjson.OPT_SERIALIZE_NUMPY,
+            )
+        )
+
+    with open(filename+'.json', "wb") as io:
+        _serialize(log, io)
+
+    return
     
 
 #######################################################################################################################

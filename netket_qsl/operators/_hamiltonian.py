@@ -21,7 +21,7 @@ In general, call :
 #######################################################################################################################
 #################################################### Hamiltonians #####################################################
 #######################################################################################################################
-def potential(hi:_SpinHilbert, lattice:_Kagome, Rb:float=2.4, Rcut:float=np.sqrt(7)):
+def vdW_potential(hi:_SpinHilbert, lattice:_Kagome, Rb:float=2.4, Rcut:float=np.sqrt(7)):
     '''
     Returns the potential operator of the lattice i.e. V/Ω = sum (Rb/rij)^6 ni nj so that there is no dependence on time
     with a rydberg blockade at Rb, interactions up to Rcut
@@ -67,7 +67,7 @@ def potential(hi:_SpinHilbert, lattice:_Kagome, Rb:float=2.4, Rcut:float=np.sqrt
                     
     return V, R
 
-class Hamiltionian:
+class Rydberg_Hamiltionian:
     '''
     Constructs the support fot the hamiltonian's operator. The Hamiltonian is of the form : 
     H = -Ω(t)/2 \sum_i X_i - Δ(t) \sum_i n_i + Ω(t)/2 \sum_ij (Rb/r_ij)^6 n_i n_j
@@ -97,19 +97,19 @@ class Hamiltionian:
         self.Xtot_op = sum([X(hi,i) for i in range(N)])
 
         # Potential
-        self.V_op, self.R = potential(hi, lattice, Rb, Rcut)
+        self.V_op, self.R = vdW_potential(hi, lattice, Rb, Rcut)
 
         # Frequency schedules to be determined only once
         self.frequencies = frequencies
 
         # Infos of the operator
-        self.str = f'Hamiltonian({lattice}, (Ω,Δ)={frequencies}, Rb={Rb}, Rcut={Rcut})'
+        self._str = f'Hamiltonian({lattice}, (Ω,Δ)={frequencies}, Rb={Rb}, Rcut={Rcut})'
 
     def __repr__(self):
         '''
         Representation of the class
         '''
-        return self.str
+        return self._str
 
 
     def __call__(self, t):
@@ -126,7 +126,7 @@ class Hamiltionian:
         # our operator
         return -Ω/2*self.Xtot_op - Δ*self.N_op + Ω*self.V_op
     
-    def delta_h(self, d):
+    def of_delta(self, d):
         '''
         H(Δ(t)) : computes the LocalOperator Hamiltonian at time t such that Δ(t) = d
         d : relative value of Δ(t), i.e. d = Δ/Ωf

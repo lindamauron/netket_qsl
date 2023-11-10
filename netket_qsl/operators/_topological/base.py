@@ -27,7 +27,7 @@ class TopoOperator(AbstractOperator):
 
     It is possible to multiply multiple topological operators of the same type (type P,Q,R) or to multiply them by a scalar. No other operation. 
     '''
-    def __init__(self, hilbert : _SpinHilbert, sites, scalar=1.0):
+    def __init__(self, hilbert:_SpinHilbert, sites, scalar=1.0):
         '''
         Instantiates one topological operator 
         hilbert : Hilbert space on which the operator acts

@@ -492,7 +492,7 @@ class Kagome:
         return : float () with the number of distances 
         '''
         if self._n_distances is None:
-            self.neighbors_distances
+            self._n_distances = np.max(self.neighbors_distances)+1
         
         return self._n_distances
 
@@ -517,7 +517,6 @@ class Kagome:
                     neighbors_distances[i,j] = np.argmin( np.abs(dist[i,j] - neighbors) )
             self._neighbors_distances = neighbors_distances
 
-            self._n_distances = np.max(neighbors_distances)+1
         return self._neighbors_distances
 
 

@@ -28,7 +28,7 @@ from netket.vqs import (
 
 _Nan = float("NaN")
 from ._integrators import Integrator, RK4
-from ..operators._hamiltonian import Hamiltionian
+from ..operators._hamiltonian import Rydberg_Hamiltionian as Hamiltionian
 
 
  

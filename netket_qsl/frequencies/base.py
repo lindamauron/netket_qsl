@@ -35,7 +35,7 @@ class Frequency:
         return : corresponding Ω (in Mrad/μs)
         '''
         flag = (t < self.sweep_time/5)
-        return 2*self.Ωf*t /self.sweep_time*2.5*flag + self.Ωf*(1-flag)
+        return 2*self.Ωf*t /self.sweep_time*self.sweep_time*flag + self.Ωf*(1-flag)
 
     @abc.abstractmethod
     def Δ(self, t):

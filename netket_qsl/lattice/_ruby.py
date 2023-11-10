@@ -45,6 +45,7 @@ class Ruby(Square):
         self._graph = None
         self._distances = None
         self._neighbors_distances = None
+        self._n_distances = None
 
 
         
