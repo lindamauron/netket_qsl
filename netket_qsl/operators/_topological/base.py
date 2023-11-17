@@ -8,11 +8,13 @@ from jax import jit
 import jax.numpy as jnp
 import scipy.sparse
 
+from typing import Union
+
 import netket as nk
 from netket.hilbert import Spin as _SpinHilbert
 from netket.operator._abstract_operator import AbstractOperator
-
-
+from netket.utils.types import Array, ArrayLike, Dtype
+from scipy.sparse import csr_matrix as _csr_matrix
 """ 
 Was tested and works
 Is it better to use than the previous operator ???
@@ -27,7 +29,7 @@ class TopoOperator(AbstractOperator):
 
     It is possible to multiply multiple topological operators of the same type (type P,Q,R) or to multiply them by a scalar. No other operation. 
     '''
-    def __init__(self, hilbert:_SpinHilbert, sites, scalar=1.0):
+    def __init__(self, hilbert:_SpinHilbert, sites:Union[int,Array,ArrayLike], scalar=1.0):
         '''
         Instantiates one topological operator 
         hilbert : Hilbert space on which the operator acts
@@ -48,7 +50,7 @@ class TopoOperator(AbstractOperator):
         
 
     @property
-    def dtype(self):
+    def dtype(self) -> Dtype:
         '''
         The dtype of the operator's matrix elements ⟨σ|Ô|σ'⟩.
         '''
@@ -76,7 +78,7 @@ class TopoOperator(AbstractOperator):
         '''
 
     @partial(jit, static_argnums=0)
-    def get_conns_and_mels(self, sigma):
+    def get_conns_and_mels(self, sigma:Array):
         '''
         Gives the connections x' and the corresponding matrix elements m=<x|O|x'> of the operator
         sigma : array of states for which one needs the connections and matrix elements (Ns,N)
@@ -90,7 +92,7 @@ class TopoOperator(AbstractOperator):
         return x_primes, self.scalar*jnp.prod(m_primes, axis=0)
 
 
-    def __mul__(self, other):
+    def __mul__(self, other:Union["TopoOperator",np._NumberType]):
         '''
         Possibility to multiply two same operators OR the op by a number, nothing else
         Multiplying T1*T2 first applies T2 then T1 (for any TopoOperator T)
@@ -108,7 +110,7 @@ class TopoOperator(AbstractOperator):
         return type(self)(self.hilbert, self.sites, self.scalar*other)
 
         
-    def __rmul__(self, other):
+    def __rmul__(self, other:Union["TopoOperator",np._NumberType]):
         if isinstance(other, type(self)):
             return other.__mul__(self)
         
@@ -117,13 +119,13 @@ class TopoOperator(AbstractOperator):
             
         return type(self)(self.hilbert, self.sites, self.scalar*other)
     
-    def __neg__(self):
+    def __neg__(self) -> "TopoOperator":
         return -1.0*self
         
     def __repr__(self):
         return f"{self.scalar}*{type(self).__name__}(hilbert={self.hilbert}, sites={self.sites}, dtype={self.dtype})"
     
-    def to_sparse(self):
+    def to_sparse(self) -> _csr_matrix:
         '''
         Returns the sparse matrix representation of the operator. Note that,
         in general, the size of the matrix is exponential in the number of quantum
@@ -147,7 +149,7 @@ class TopoOperator(AbstractOperator):
             shape=(self.hilbert.n_states, self.hilbert.n_states),
         )
 
-    def to_dense(self):
+    def to_dense(self) -> Array:
         '''
         Returns the dense matrix representation of the operator. Note that,
         in general, the size of the matrix is exponential in the number of quantum

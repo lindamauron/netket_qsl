@@ -6,25 +6,13 @@ from netket.hilbert import Spin as _SpinHilbert
 from ..hilbert import TriangleHilbertSpace as _TriangleHilbertSpace
 from netket.operator._local_operator import LocalOperator as _LocalOperator
 from netket.utils.types import DType as _DType
+from netket.utils.types import Array as _Array
 from ..lattice import Kagome as _Kagome
 
 import jax.numpy as jnp
 from functools import partial
 from jax import jit
-
-
-""" 
-Defines all the operators needed in the Z basis, so that there is no need to define them in code
-In practice, only needs to redefine X,Z,P,Q,R but the rest is changed in consequence
-
-In general, call : 
->>> from ZOperators import r_density, TopoOps, delta_Hamiltonian
->>> n_op = r_density(hi, lattice)
->>> P_op, Q_op, R_op = TopoOps(hi, lattice, hex=0)
->>> H = delta_Hamiltonian(hi, lattice) # for H(Δ)
->>> H_dyn = time_Hamiltonian(hi, lattice) # for H(t)
-"""
-
+from typing import Tuple
 
 #######################################################################################################################
 ################################################## General Operators ##################################################
@@ -32,7 +20,7 @@ In general, call :
 
 def X(hilbert:_SpinHilbert, i:int, restricted:bool=True) -> _LocalOperator:
     '''
-    Builds the :math:`σ^x=|g><r|+|r><g|` operator acting on the i-th site of the restricted Hilbert space `hilbert`
+    Builds the :math:`σ^x=|g><r|+|r><g|` operator acting on the i-th site of the (restricted) Hilbert space `hilbert`
     
     hilbert : hilbert space of the system
     i : site on which to apply the operator
@@ -46,7 +34,7 @@ def X(hilbert:_SpinHilbert, i:int, restricted:bool=True) -> _LocalOperator:
 
 def Z(hilbert:_SpinHilbert, i:int, restricted:bool=True) -> _LocalOperator:
     '''
-    Builds the :math:`σ^z=|g><g|-|r><r|` operator acting on the i-th site of the restricted Hilbert space `hilbert`
+    Builds the :math:`σ^z=|g><g|-|r><r|` operator acting on the i-th site of the (restricted) Hilbert space `hilbert`
 
     hilbert : hilbert space of the system
     i : site on which to apply the operator
@@ -58,7 +46,7 @@ def Z(hilbert:_SpinHilbert, i:int, restricted:bool=True) -> _LocalOperator:
 
 def Y(hilbert:_SpinHilbert, i:int, restricted:bool=True) -> _LocalOperator:
     '''
-    Builds the :math:`σ^y=i|g><r|-i|r><g|` operator acting on the i-th site of the restricted Hilbert space `hilbert`
+    Builds the :math:`σ^y=i|g><r|-i|r><g|` operator acting on the i-th site of the (restricted) Hilbert space `hilbert`
 
     hilbert : hilbert space of the system
     i : site on which to apply the operator
@@ -72,7 +60,7 @@ def Y(hilbert:_SpinHilbert, i:int, restricted:bool=True) -> _LocalOperator:
 
 def sigma_plus(hilbert:_SpinHilbert, i:int, restricted:bool=True) -> _LocalOperator:
     '''
-    Builds the :math:`σ^+= |r><g|` operator acting on the i-th site of the restricted Hilbert space `hilbert`
+    Builds the :math:`σ^+= |r><g|` operator acting on the i-th site of the (restricted) Hilbert space `hilbert`
 
     hilbert : hilbert space of the system
     i : site on which to apply the operator
@@ -87,7 +75,7 @@ def sigma_plus(hilbert:_SpinHilbert, i:int, restricted:bool=True) -> _LocalOpera
 
 def sigma_minus(hilbert:_SpinHilbert, i:int, restricted:bool=True) -> _LocalOperator:
     '''
-    Builds the :math:`σ^-= |g><r|` operator acting on the i-th site of the restricted Hilbert space `hilbert`
+    Builds the :math:`σ^-= |g><r|` operator acting on the i-th site of the (restricted) Hilbert space `hilbert`
 
     hilbert : hilbert space of the system
     i : site on which to apply the operator
@@ -102,7 +90,7 @@ def sigma_minus(hilbert:_SpinHilbert, i:int, restricted:bool=True) -> _LocalOper
 
 def g_occ(hilbert:_SpinHilbert, i:int) -> _LocalOperator: 
     '''
-    Builds the :math:`P_g=|g><g|` operator acting on the i-th site of the restricted Hilbert space `hilbert`
+    Builds the :math:`P_g=|g><g|` operator acting on the i-th site of the (restricted) Hilbert space `hilbert`
 
     hilbert : hilbert space of the system
     i : site on which to apply the operator
@@ -113,7 +101,7 @@ def g_occ(hilbert:_SpinHilbert, i:int) -> _LocalOperator:
 
 def r_occ(hilbert:_SpinHilbert, i:int) -> _LocalOperator: 
     '''
-    Builds the :math:`P_r=|r><r|=n` operator acting on the i-th site of the restricted Hilbert space `hilbert`
+    Builds the :math:`P_r=|r><r|=n` operator acting on the i-th site of the (restricted) Hilbert space `hilbert`
 
     hilbert : hilbert space of the system
     i : site on which to apply the operator
@@ -125,7 +113,7 @@ def r_occ(hilbert:_SpinHilbert, i:int) -> _LocalOperator:
 
 def r_density(hilbert:_SpinHilbert, lattice:_Kagome) -> _LocalOperator:
     '''
-    Builds the :math:`n = 1/N sum_i n_i` operator acting on the i-th site of the restricted Hilbert space `hilbert`
+    Builds the :math:`n = 1/N sum_i n_i` operator acting on the i-th site of the (restricted) Hilbert space `hilbert`
 
     hilbert : hilbert space of the system
     lattice : lattice on which we want the mean (gives the number of sites)
@@ -140,7 +128,7 @@ def r_density(hilbert:_SpinHilbert, lattice:_Kagome) -> _LocalOperator:
     # Mean number of Rydberg exitations
     return N_op/N
 
-def TopoOps(hilbert:_SpinHilbert, lattice:_Kagome, hex:int=0, sites=None) -> _LocalOperator:
+def TopoOps(hilbert:_SpinHilbert, lattice:_Kagome, hex:int=0, sites=None) -> Tuple[_LocalOperator,_LocalOperator,_LocalOperator]:
     '''
     Constructs the topological operators on a lattice
     one can either apply on a specific hexagon or on a (list of) site(s)
@@ -160,7 +148,7 @@ def TopoOps(hilbert:_SpinHilbert, lattice:_Kagome, hex:int=0, sites=None) -> _Lo
 
 
 @partial(jit, static_argnums=0)
-def dimer_probs(lattice:_Kagome, samples):
+def dimer_probs(lattice:_Kagome, samples:_Array) -> _Array:
     '''
     Calculates the probability of presence of monomers, single dimers and double dimers etc on the bulk of the lattice (could be up to four)
     lattice : system on which we want to compute the probabilities

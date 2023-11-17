@@ -1,27 +1,21 @@
 import numpy as np 
 
+from typing import Tuple
+from netket.utils.types import Array
+from scipy.sparse import csr_matrix as _csr_matrix
+from netket.operator import DiscreteOperator as _DiscreteOperator
+
 from ..frequencies import Frequency as _Frequency
 from ..frequencies import Cubic
 from ._usual import X, r_occ
 from ..lattice import Kagome as _Kagome
 from netket.hilbert import Spin as _SpinHilbert
 
-""" 
-Defines all the operators needed in the Z basis, so that there is no need to define them in code
-In practice, only needs to redefine X,Z,P,Q,R but the rest is changed in consequence
-
-In general, call : 
->>> from ZOperators import r_density, TopoOps, delta_Hamiltonian
->>> n_op = r_density(hi, lattice)
->>> P_op, Q_op, R_op = TopoOps(hi, lattice, hex=0)
->>> H = delta_Hamiltonian(hi, lattice) # for H(Δ)
->>> H_dyn = time_Hamiltonian(hi, lattice) # for H(t)
-"""
 
 #######################################################################################################################
 #################################################### Hamiltonians #####################################################
 #######################################################################################################################
-def vdW_potential(hi:_SpinHilbert, lattice:_Kagome, Rb:float=2.4, Rcut:float=np.sqrt(7)):
+def vdW_potential(hi:_SpinHilbert, lattice:_Kagome, Rb:float=2.4, Rcut:float=np.sqrt(7)) -> Tuple[_DiscreteOperator,Array]:
     '''
     Returns the potential operator of the lattice i.e. V/Ω = sum (Rb/rij)^6 ni nj so that there is no dependence on time
     with a rydberg blockade at Rb, interactions up to Rcut
@@ -35,7 +29,7 @@ def vdW_potential(hi:_SpinHilbert, lattice:_Kagome, Rb:float=2.4, Rcut:float=np.
     '''        
     N = lattice.N 
 
-    # express the rela length
+    # express the real length
     Rb *= lattice.a
         
     # range of the interactions
@@ -112,7 +106,7 @@ class Rydberg_Hamiltionian:
         return self._str
 
 
-    def __call__(self, t):
+    def __call__(self, t:float) -> _DiscreteOperator:
         '''
         H(t) : computes the LocalOperator Hamiltonian at time t
         t : time
@@ -126,7 +120,7 @@ class Rydberg_Hamiltionian:
         # our operator
         return -Ω/2*self.Xtot_op - Δ*self.N_op + Ω*self.V_op
     
-    def of_delta(self, d):
+    def of_delta(self, d:float) -> _DiscreteOperator:
         '''
         H(Δ(t)) : computes the LocalOperator Hamiltonian at time t such that Δ(t) = d
         d : relative value of Δ(t), i.e. d = Δ/Ωf
@@ -137,7 +131,7 @@ class Rydberg_Hamiltionian:
         return self.frequencies.Ωf*( -1/2*self.Xtot_op - d*self.N_op + self.V_op )
 
     
-    def operators(self):
+    def operators(self) -> Tuple[_DiscreteOperator,_DiscreteOperator,_DiscreteOperator]:
         '''
         Returns each individual operator, independent of time
 
@@ -146,10 +140,22 @@ class Rydberg_Hamiltionian:
         return self.Xtot_op, self.N_op, self.V_op
     
 
-    def for_sparse(self):
+    def for_sparse(self) -> Tuple[_csr_matrix,_csr_matrix,_csr_matrix]:
         '''
         Returns each individual operator, independent of time, as a sparse matrix
 
         returns : (\sum_i X_i , \sum_i n_i , 1/2 \sum_ij (Rb/r_ij)^6 n_i n_j ) SparseMatrices
         '''
         return self.Xtot_op.to_sparse(), self.N_op.to_sparse(), self.V_op.to_sparse()
+
+    def as_lists(self) -> Tuple[Tuple[_csr_matrix,_csr_matrix,_csr_matrix], Tuple[callable,callable,callable]]:
+        '''
+        Generates two lists of mutually callables which work as follows : 
+        H(t) = sum([f(t)*op for op,f in zip(ops,freqs) ])
+
+        returns : (sparse operators, callable coefficients)
+        '''
+        ops = self.for_sparse()
+        freqs = (lambda t : -self.frequencies.Ω(t)/2, lambda t : -self.frequencies.Δ(t), lambda t : self.frequencies.Ωf)
+
+        return ops, freqs

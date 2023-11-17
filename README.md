@@ -14,8 +14,19 @@ lattice = qsl.lattice.Ruby(3.9,extents_down=[3,4,5,6,7,6,5], extents_up=[4,5,6,7
 - **operator** : all operators necessary, i.e. Rydberg hamiltonian as well as topological operators and basic Pauli matrices.  
 ```python
 import qsl
-H = qsl.operators.Hamiltonian(hilbert,lattice,frequencies,Rb,Rcut)
-P = -2*qsl.operators.P(hi,sites)*qsl.operators.P(hi,other_sites)
+n_op = r_density(hi, lattice)
+P_op, Q_op, R_op = TopoOps(hi, lattice, hex=0) # all topological operators for the same contour on the lattice
+P = -2*qsl.operators.P(hi,sites)*qsl.operators.P(hi,other_sites) #topo operators have basic mathematical compatibilities
+
+H = qsl.operators.Rydberg_Hamiltonian(hilbert,lattice,frequencies,Rb,Rcut)
+# you can then call the Hamiltonain at any time : 
+H(t)
+
+# or obtain the Hamiltonian for a certain Delta value :
+H.of_delta(d)
+
+# or have the separate operators of the Hamiltonian (without time dependens) in LocalOperator or sparse matrices
+H.operators(), H.for_sparse()
 ```
 - **frequencies** : callables of the frequency schedules one can use for Ω(t) and Δ(t). already implemented : Linear or Cubic schedule. 
 ```python

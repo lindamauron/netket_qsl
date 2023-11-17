@@ -13,7 +13,7 @@ def linear_sweep(sweep_time,fMin,fMax):
 
 class Linear(Frequency):
     '''
-    Defines the cubic frequencies schedules Ω(t) and Δ(t) for a given sweep_time.
+    Defines the linear frequencies schedules Ω(t) and Δ(t) for a given sweep_time.
     Allows to get both frequencies at the time we want. The functions are vectorized and can be used outside the time range [0,sweep_time].
     It is also possible to integrate and derivate the frequencies over any time interval. 
 
@@ -35,12 +35,12 @@ class Linear(Frequency):
         '''
         super().__init__(sweep_time,Omega)
         self.sweep, self.f = linear_sweep(sweep_time,fMin,fMax)
-        self.Dmin = 2*np.pi*fMin
-        self.Dmax = 2*np.pi*fMax
+        self.Δi = 2*np.pi*fMin
+        self.Δf = 2*np.pi*fMax
 
     
     def __repr__(self):
-        return 'LinearSweep(' + super().__repr__()+ f'[{self.Dmin/2/np.pi},{self.Dmax/2/np.pi}])'
+        return 'LinearSweep(' + super().__repr__()+ f'[{self.Δi/2/np.pi},{self.Δf/2/np.pi}])'
 
     def Δ(self, t):
         '''
@@ -50,7 +50,7 @@ class Linear(Frequency):
         return : corresponding Δ (in Mrad/μs)
         '''
         flag = (t < self.sweep_time/5)
-        return self.Dmin*(flag) + (1 - flag)*self.sweep(t)
+        return self.Δi*(flag) + (1 - flag)*self.sweep(t)
         
 
     def mean_Delta(self, t1, t2):
@@ -70,8 +70,8 @@ class Linear(Frequency):
             if t1 > T:
                 return (F(t2)-F(t1) )/(t2-t1)
             else:
-                return (F(t2)-F(T) + self.Dmin*(T-t1))/(t2-t1)
+                return (F(t2)-F(T) + self.Δi*(T-t1))/(t2-t1)
         else:
-            return self.Dmin
+            return self.Δi
     
 
