@@ -26,13 +26,8 @@ def _restricted_sigmax(
     t = np.floor(i/3).astype(int) # the triangle index
     j = 3*t + (i+1)%3
     k = 3*t + (i+2)%3
-    
-    if i%3==0:
-        index = 4
-    elif i%3==1:
-        index = 2
-    else:
-        index = 1
+
+    index = 2**(2-i%3)
     
     # The matrix representing σ^x in the retricted basis (put coefficients outside space to 0)
     D = np.zeros((8,8), dtype=dtype)
@@ -61,14 +56,9 @@ def _restricted_sigmay(
     j = 3*t + (i+1)%3
     k = 3*t + (i+2)%3
     
-    if i%3==0:
-        index = 4
-    elif i%3==1:
-        index = 2
-    else:
-        index = 1
+    index = 2**(2-i%3)
     
-    # The matrix representing σ^x in the retricted basis (put coefficients outside space to 0)
+    # The matrix representing σ^y in the retricted basis (put coefficients outside space to 0)
     D = np.zeros((8,8), dtype=dtype)
     D[0,index] = -1j
     D[index,0] = 1j
@@ -96,14 +86,9 @@ def _restricted_sigmap(
     j = 3*t + (i+1)%3
     k = 3*t + (i+2)%3
     
-    if i%3==0:
-        index = 4
-    elif i%3==1:
-        index = 2
-    else:
-        index = 1
+    index = 2**(2-i%3)
     
-    # The matrix representing σ^x in the retricted basis (put coefficients outside space to 0)
+    # The matrix representing σ^+ in the retricted basis (put coefficients outside space to 0)
     D = np.zeros((8,8), dtype=dtype)
     D[0,index] = 1.0    
     
@@ -127,14 +112,9 @@ def _restricted_sigmam(
     j = 3*t + (i+1)%3
     k = 3*t + (i+2)%3
     
-    if i%3==0:
-        index = 4
-    elif i%3==1:
-        index = 2
-    else:
-        index = 1
+    index = 2**(2-i%3)
     
-    # The matrix representing σ^x in the retricted basis (put coefficients outside space to 0)
+    # The matrix representing σ^- in the retricted basis (put coefficients outside space to 0)
     D = np.zeros((8,8), dtype=dtype)
     D[index,0] = 1.0    
     

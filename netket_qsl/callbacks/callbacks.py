@@ -44,7 +44,7 @@ class CallbackParamsJastrow:
         name : folder in which the infos will be written
         '''
         self.name = name
-        self.writer = tbx.SummaryWriter(self.name)        
+        self.writer = tbx.SummaryWriter(self.name)
         
     def __call__(self, step, log_data, driver):   
 
@@ -91,4 +91,3 @@ def cb_dt(step, log_data, driver):
     log_data['dt'] = driver.integrator.dt
 
     return True
-

@@ -10,7 +10,8 @@ __all__ = [
     "callbacks",
     "toy_model",
     "driver", 
-    "logging"
+    "logging",
+    "observables"
 ]
 
 from . import (
@@ -18,7 +19,8 @@ from . import (
     hilbert, 
     frequencies,
     utils,
-    logging
+    logging, 
+    observables
 )
 
 from . import (

@@ -5,8 +5,8 @@ from .callbacks import (
     CallbackParamsJastrow, 
     cb_derivatives, 
     cb_distr, 
-    cb_dt, 
+    cb_dt
 )
 
 from ._dimer_probs import callback_dimerprobs
-from ._entropies import callback_entropy, bootstrap_entropy
+from ._entropies import callback_entropy_distribution

@@ -305,7 +305,7 @@ class TDVP_MF(AbstractVariationalDriver):
                 loggers = ()
             # if out is a path, create an overwriting Json Log for output
             elif isinstance(out, str):
-                loggers = (JsonLog(out, "w"),)
+                loggers = (JsonLog(out, "w",save_params=False),)
             else:
                 loggers = _to_iterable(out)
         else:
@@ -313,6 +313,11 @@ class TDVP_MF(AbstractVariationalDriver):
             show_progress = False
 
         callbacks = _to_iterable(callback)
+        if isinstance(out, str):
+            callbacks = callbacks + (callback_pars(out), )
+        else:
+            callback = callbacks + (callback_pars(''), )
+
         callback_stop = False
 
         t_end = np.asarray(self.t + T)
@@ -366,8 +371,6 @@ class TDVP_MF(AbstractVariationalDriver):
                         callback_stop = True
 
                 for logger in loggers:
-                    #print(log_data)
-                    time = self.t
                     logger(float(self.t), log_data, self.state)
 
                 if len(callbacks) > 0:
@@ -416,3 +419,20 @@ def integrate(driver):
     driver.t += driver._integrator.h
 
     return True
+
+
+
+class callback_pars:
+    def __init__(self,folder=''):
+        self.folder = folder
+        self.times = []
+        self.pars = []
+
+    def __call__(self,step, log_data, driver):
+        self.times.append(step)
+        np.save(self.folder+'time.npy', self.times)
+
+        self.pars.append( driver.state.parameters['ϕ'] )
+        np.save(self.folder+'pars.npy', self.pars)
+
+        return True

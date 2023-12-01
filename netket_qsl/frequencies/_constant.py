@@ -43,7 +43,7 @@ class Constant(Frequency):
 
         return : corresponding Ω (in Mrad/μs)
         '''
-        return self.Ωf
+        return self.Ωf*np.ones_like(t)
     
     def Δ(self, t):
         '''
@@ -52,7 +52,7 @@ class Constant(Frequency):
 
         return : corresponding Δ (in Mrad/μs)
         '''
-        return self.Δf
+        return self.Δf*np.ones_like(t)
     
     def mean_Omega(self, t1, t2):
         r'''

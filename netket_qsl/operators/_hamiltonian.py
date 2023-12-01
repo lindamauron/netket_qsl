@@ -46,7 +46,6 @@ def vdW_potential(hi:_SpinHilbert, lattice:_Kagome, Rb:float=2.4, Rcut:float=np.
     R = (Rb/R)**6
     R[lattice.distances>Rcut] = 0
     np.fill_diagonal(R, 0)
-    R = R    
 
     V = 0
     d = lattice.distances

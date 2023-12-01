@@ -13,8 +13,10 @@ from typing import Union
 import netket as nk
 from netket.hilbert import Spin as _SpinHilbert
 from netket.operator._abstract_operator import AbstractOperator
-from netket.utils.types import Array, ArrayLike, Dtype
+from netket.utils.types import Array, ArrayLike, DType
 from scipy.sparse import csr_matrix as _csr_matrix
+from numbers import Number
+
 """ 
 Was tested and works
 Is it better to use than the previous operator ???
@@ -50,7 +52,7 @@ class TopoOperator(AbstractOperator):
         
 
     @property
-    def dtype(self) -> Dtype:
+    def dtype(self) -> DType:
         '''
         The dtype of the operator's matrix elements ⟨σ|Ô|σ'⟩.
         '''
@@ -92,7 +94,7 @@ class TopoOperator(AbstractOperator):
         return x_primes, self.scalar*jnp.prod(m_primes, axis=0)
 
 
-    def __mul__(self, other:Union["TopoOperator",np._NumberType]):
+    def __mul__(self, other:Union["TopoOperator",Number]):
         '''
         Possibility to multiply two same operators OR the op by a number, nothing else
         Multiplying T1*T2 first applies T2 then T1 (for any TopoOperator T)
@@ -110,7 +112,7 @@ class TopoOperator(AbstractOperator):
         return type(self)(self.hilbert, self.sites, self.scalar*other)
 
         
-    def __rmul__(self, other:Union["TopoOperator",np._NumberType]):
+    def __rmul__(self, other:Union["TopoOperator",Number]):
         if isinstance(other, type(self)):
             return other.__mul__(self)
         
