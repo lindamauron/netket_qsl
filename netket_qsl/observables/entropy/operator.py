@@ -45,6 +45,9 @@ class Renyi2EntanglementEntropy:
         :math:`\eta \in \bar{A}` and
         :math:`\Pi(\sigma, \eta) = |\Psi(\sigma,\eta)|^2 / \langle \Psi | \Psi \rangle`.
 
+        This implementation enables to estimate the variance through bootstrappping.
+        In this case, the R_hat returned corresponds to the maximal R_hat over all bootstraps. 
+        
         Args:
             hilbert: hilbert space of the system.
             partition: list of the indices identifying the degrees of
@@ -58,7 +61,6 @@ class Renyi2EntanglementEntropy:
         Returns:
             Rényi2 operator for which computing the expected value.
         """
-        nk.config.netket_experimental_fft_autocorrelation = True
         self._hilbert = hilbert
 
         self._partition = np.array(list(set(partition)))

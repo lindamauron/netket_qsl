@@ -12,7 +12,7 @@ class HoleRuby(Ruby):
     '''
     
     ## Initilization methods ##
-    def __init__(self, a):
+    def __init__(self, a=1.0):
         '''
         Defines the positions of each atom in the lattice
         a : unit cell size in μm

@@ -4,7 +4,7 @@ import jax
 import jax.numpy as jnp
 
 
-from netket.stats import statistics as mpi_statistics
+from netket.stats.mc_stats import _statistics as mpi_statistics
 from netket import jax as nkjax
 from functools import partial
 
@@ -44,8 +44,7 @@ def postprocessing(idcs1, idcs2, lv1, lv2, lv12, lv21):
     
     s = mpi_statistics( jnp.exp(lv12 + lv21 - lv1[idcs1] - lv2[idcs2]) )
 
-    return -jnp.log(s.mean)
-
+    return -jnp.log(s.mean) , s.tau_corr, s.tau_corr_max, s.R_hat
 
 @partial(jax.jit, static_argnames=("afun", "chunk_post", "chunk_size", "n_boots"))
 def _renyi2_bootstrap(key, afun, params, model_state, samples, partition, n_boots, chunk_post, chunk_size):
@@ -53,7 +52,7 @@ def _renyi2_bootstrap(key, afun, params, model_state, samples, partition, n_boot
     Evaluates the Renyi2 entropy of a bunch of samples, randomly mixed together for n_bootstrap
     afun : apply function of the state, i.e. log ψ
     samples: samples over which to average
-    op: entropy operator caontaing alll info (partition, n_boots, random key, chunk_size_post)
+    op: entropy operator containg alll info (partition, n_boots, random key, chunk_size_post)
     chunk_size : chunk_size to use for the evaluation of the (n_boots,n_samples/2) log_values of the swapped samples
 
     return: << ψ(x1,x2) ψ(x2,x1) / ψ(x1,x1) ψ(x2,x2) >> for all bootstraps (n_boostrap,)   
@@ -100,6 +99,7 @@ def _renyi2_bootstrap(key, afun, params, model_state, samples, partition, n_boot
     # print(lv12.shape, lv21.shape) #(n,Ns/2)
 
     vmap2 = partial(nk.jax.vmap_chunked, chunk_size=chunk_post)
+
     return vmap2(postprocessing, (0,0,None,None,0,0))(bidcs1, bidcs2, lv1, lv2, lv12, lv21) #(n,)
 
 

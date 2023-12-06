@@ -1,4 +1,7 @@
 
 
-from .operator import Renyi2EntanglementEntropy
-from . import expect
+from .entropy.operator import Renyi2EntanglementEntropy
+from .entropy import expect
+
+from .dimers import DimerProbabilities
+from .dimers import expect

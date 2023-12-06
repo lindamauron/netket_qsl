@@ -2,6 +2,7 @@ import numpy as np
 import networkx as nx
 import netket as nk
 import abc
+import matplotlib.pyplot as plt
 
 from functools import partial
 from jax import vmap, jit
@@ -294,16 +295,15 @@ class Kagome:
         return self._graph
 
 
-    def plot_lattice(self, ax, annotate=False, plot_lines=False, sample=None):
+    def plot(self, ax=None, sample=None, annotate=False, plot_lines=False):
         '''
         Plots the lattice on a chosen figure with annotation of the atoms
         For example : 
 
         fig, ax = plt.subplots(1,1, figsize=(6,4))
-        lattice.plot_lattice(ax, True, True)
+        lattice.plot_lattice(ax, True, True,-np.ones(N))
         ax.axis('off')
         plt.show() 
-
 
         ax : AxesSubPlot on which to plot the lattice
         annotate : boolean indicating wether we write down the indices of the atoms
@@ -311,6 +311,9 @@ class Kagome:
                      (helps for visibility but takes quite longer to load, i.e. do not do many times)
         sample : one specific sample to draw. In this sample, +1 is red and -1 is green
         '''
+        if not ax:
+            fig, ax = plt.subplots(1,1, figsize=(6,4))
+
         c = np.tile(['darkgreen', 'r'], (self.N,))
 
         # by default, we just do all green i.e. |g>
@@ -378,9 +381,10 @@ class Kagome:
             ax.set_xlim([-5,pos[-1,0]+3])
             ax.set_ylim([-3,pos[-1,1]+3])
 
-        return
+        ax.axis('off')
+        return ax
         
-    def plot_connexions(self, ax, annotate=False, plot_links=False):
+    def draw(self, ax, annotate=False, plot_links=False):
         '''
         Plots the lattice on a chosen figure with annotation of the atoms
         ax : AxesSubPlot on which to plot the lattice

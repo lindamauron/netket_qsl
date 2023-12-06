@@ -11,6 +11,11 @@ lattice = qsl.lattice.Square(a,3,6)
 lattice = qsl.lattice.Ruby(3.9,extents_down=[3,4,5,6,7,6,5], extents_up=[4,5,6,7,6,5,4])
 ```
 - **hilbert** : custom restricted hilbert space with perfect first neighbor blockade
+- **frequencies** : callables of the frequency schedules one can use for Ω(t) and Δ(t). already implemented : Linear or Cubic schedule. 
+```python
+f = qsl.frequencies.Cubic(sweep_time,Omegaf,Deltamin,Deltamax)
+f = qsl.frequencies.Linear(sweep_time,Omegaf,Deltamin,Deltamax)
+```
 - **operator** : all operators necessary, i.e. Rydberg hamiltonian as well as topological operators and basic Pauli matrices.  
 ```python
 import qsl
@@ -28,11 +33,13 @@ H.of_delta(d)
 # or have the separate operators of the Hamiltonian (without time dependens) in LocalOperator or sparse matrices
 H.operators(), H.for_sparse()
 ```
-- **frequencies** : callables of the frequency schedules one can use for Ω(t) and Δ(t). already implemented : Linear or Cubic schedule. 
-```python
-f = qsl.frequencies.Cubic(sweep_time,Omegaf,Deltamin,Deltamax)
-f = qsl.frequencies.Linear(sweep_time,Omegaf,Deltamin,Deltamax)
+- **observables** : to compute the Renyi2 entanglement entropy of the system.
 ```
+S2 = qsl.observables.Renyi2EntanglementEntropy(hilbert,partition,n_boots,seed)
+vs.expect(S2)
+``` 
+You can either evaluate the error through error propagation (not recommended) by setting n_boots=None,0,1 or through bootstrapping by choosing a finite number of bootstraps. 
+
 - **models** : NQS models used for the time evolution. Mainly mean-field and jastrow ansatze. 
 - **rules** : custom sampling rules (restricted means compatible with the restricted hilbert space).
 - **driver** : mean-field driver for the analytical resolution of the TDVP. 

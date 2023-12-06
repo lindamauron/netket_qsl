@@ -13,7 +13,7 @@ class Ruby(Square):
     '''
     
     ## Initilization methods ##
-    def __init__(self, a, extents_down=[3,4,5,6,7,6,5], extents_up=[4,5,6,7,6,5,4]):
+    def __init__(self, a=1.0, extents_down=[3,4,5,6,7,6,5], extents_up=[4,5,6,7,6,5,4]):
         '''
         Defines the positions of each atom in the lattice
         a : unit cell size in μm

@@ -61,13 +61,13 @@ def Renyi2(
             )
         )
 
-        Renyi2_stats = Renyi2_stats.replace(mean=-jnp.log(Renyi2_stats.mean).real)
+        Renyi2_stats = Renyi2_stats.replace(mean=-jnp.log(Renyi2_stats.mean) )
 
         return Renyi2_stats
 
     # if we do bootstrapping, basically vmap the previous one over all independent (non-correlated) bootstraps
     else :
-        entropies =  _renyi2_bootstrap(
+        entropies, taus, taus_max, Rs =  _renyi2_bootstrap(
             op.rng,
             vstate._apply_fun,
             vstate.parameters,
@@ -80,7 +80,12 @@ def Renyi2(
             )
         op.rng, _ = jax.random.split(op.rng)
 
-
         sigma_S = entropies.var()
-        return Stats(mean=entropies.mean(), variance=sigma_S, error_of_mean=jnp.sqrt(sigma_S/op.n_boots) ) 
+        return Stats(mean=entropies.mean(),
+                     variance=sigma_S,
+                     error_of_mean=jnp.sqrt(sigma_S/op.n_boots),
+                     tau_corr=jnp.mean(taus), 
+                     tau_corr_max=jnp.max(taus_max), 
+                     R_hat=jnp.max(Rs)
+                ) #Stats(mean=entropies.mean(), variance=sigma_S, error_of_mean=jnp.sqrt(sigma_S/op.n_boots) ) 
 

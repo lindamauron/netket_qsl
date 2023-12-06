@@ -10,6 +10,8 @@ import jax.numpy as jnp
 import jax.random as rnd
 from jax import jit, vmap
 
+from typing import Union
+from ..lattice import Kagome as _Kagome
 
 class TriangleHilbertSpace(CustomHilbert):
     '''
@@ -23,15 +25,30 @@ class TriangleHilbertSpace(CustomHilbert):
     On this subspace, th σ^x,σ^y operators have been modified in order to stay in the subspace. All components outside the subspace were set to zero. 
     '''
 
-    def __init__(self, lattice):
+    def __init__(self, lattice:Union[_Kagome,None] = None, N:Union[int,None] = 3):
         '''
         Instantiates the Hilbert space
         lattice : lattice which we want the hilbert space to represent
                   one needs it in order to have the information about the triangles
+        N: number of sites in the Hilbert space
+                  if lattice is not given, we extrapolate the triangles through the number of sites
         '''
-        self.lattice = lattice
+        if lattice:
+            self.triangles = jnp.array([t['atoms'] for t in lattice.triangles])
+            N = lattice.N
+
+        else:
+            if not N:
+                N = 3
+            if N%3!=0:
+                raise ValueError(f'N must be a multiple of 3, instead got value {N} = 3*{N//3}+{N%3}')
+            n_triangles = 3*jnp.arange(N//3)
+            self.triangles = jnp.array([n_triangles, n_triangles+1, n_triangles+2]).T
+            
+        super().__init__([-1.0, 1.0], N, vmap(self.constraint_fn) )
+
+
         
-        super().__init__([-1.0, 1.0], lattice.N, vmap(self.constraint_fn) )
         
 
     def constraint_fn(self, state):
@@ -42,7 +59,7 @@ class TriangleHilbertSpace(CustomHilbert):
         return: boolean telling if the state is in the restricted space or not
         '''
         # number of excitation per triangle
-        occupancy = -jnp.array([jnp.sum(state[...,jnp.array(t['atoms'])], axis=-1) for t in self.lattice.triangles])
+        occupancy = -jnp.array([jnp.sum(state[...,t], axis=-1) for t in self.triangles])
 
         # number of triangles with 2,3 excited states
         n2 = jnp.count_nonzero((occupancy+1)==0, axis=-1)
@@ -56,7 +73,7 @@ class TriangleHilbertSpace(CustomHilbert):
         return n2_flag*n3_flag
     
     def __repr__(self):
-        return f'TriangleHilbertSpace(N={self.lattice.N}'+', basis={|ggg>,|rgg>,|grg>,|ggr>}^N/3)'
+        return f'TriangleHilbertSpace(N={self.size}'+', basis={|ggg>,|rgg>,|grg>,|ggr>}^N/3)'
     
 
 @partial(jit, static_argnums=1)

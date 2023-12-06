@@ -10,7 +10,7 @@ class OneTriangle(Square):
     This is a special case useful for debugging since the corresponding hilbert space is small nough for all computations. 
     Yet, the defintiion exactly corresponds to the one from the super class, so we just define here for simplicity, yet do not change things. 
     '''
-    def __init__(self,a):
+    def __init__(self,a=1.0):
         '''
         a : minimal distance between two atoms
         '''
