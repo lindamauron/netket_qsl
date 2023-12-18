@@ -16,7 +16,7 @@ class Hexagons:
                 filled_hex.append( h.copy() )
                 nonbord_hex.append( h.copy() )
             elif len(h) == 5:
-                assert 0, f'This hexagon {h} has length 5 which should be impossible'
+                raise ValueError(f'This hexagon {h} has length 5 which should be impossible')
             elif len(h) == 4:
                 new_hex = h.copy()
                 

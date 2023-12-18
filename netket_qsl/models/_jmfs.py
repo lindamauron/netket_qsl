@@ -12,6 +12,31 @@ from ..lattice import Kagome as _Kagome
 #######################################################################################################################
 ####################################################### Models ########################################################
 #######################################################################################################################
+def Psi_MF(phi, x):
+    r'''
+    Computes the mean-field part of an ansatz : log ψ^{MF}(σ_i) = sum_i log φ(σ_i)
+    phi: array containing all phi coefficients (N,2)
+    x : samples to evaluate (...,N)
+
+    returns: log of mean-field probability (...)
+    '''
+    phi = jnp.array(phi)
+    N = phi.shape[0]
+
+    # compute the mean field part
+    def one_mf(state):
+        indices = jnp.array( (1+state)/2, dtype=int) # convert spins to indices -1,+1 -> 0,1
+        
+        # each sigma selects its phi
+        def one_phi(i, index):
+            return phi[i, index]
+        
+        # now for all components
+        return vmap(one_phi)(jnp.arange(N), indices)
+        
+    # finally, differently for all samples
+    return vmap(one_mf)(x)
+
 
 class MF(nn.Module):
     r'''
@@ -36,17 +61,18 @@ class MF(nn.Module):
             'ϕ', self.mf_init, (N,2), self.param_dtype
         )
 
-        # compute the mean field part
-        def one_mf(state):
-            indices = jnp.array( (1+state)/2, dtype=int)
+        # # compute the mean field part
+        # def one_mf(state):
+        #     indices = jnp.array( (1+state)/2, dtype=int)
             
             
-            def one_phi(i, index):
-                return phi[i, index]
+        #     def one_phi(i, index):
+        #         return phi[i, index]
             
-            return vmap(one_phi)(jnp.arange(N), indices)
+        #     return vmap(one_phi)(jnp.arange(N), indices)
         
-        mf = vmap(one_mf)(x)
+        # mf = vmap(one_mf)(x)
+        mf = Psi_MF(phi, x)
         
         return jnp.sum(jnp.log(mf), axis=-1)
 
@@ -92,17 +118,18 @@ class JMF_dense(nn.Module):
         corr1=0.5*jnp.einsum( '...i,ij,...j',x,W,x )
 
 
-        # compute the mean field part
-        def one_mf(state):
-            indices = jnp.array( (1+state)/2, dtype=int)
+        # # compute the mean field part
+        # def one_mf(state):
+        #     indices = jnp.array( (1+state)/2, dtype=int)
             
             
-            def one_phi(i, index):
-                return phi[i, index]
+        #     def one_phi(i, index):
+        #         return phi[i, index]
             
-            return vmap(one_phi)(jnp.arange(N), indices)
+        #     return vmap(one_phi)(jnp.arange(N), indices)
         
-        mf = vmap(one_mf)(x)
+        # mf = vmap(one_mf)(x)
+        mf = Psi_MF(phi, x)
         
         return corr1+jnp.sum(jnp.log(mf), axis=-1)
 
@@ -147,17 +174,18 @@ class JMF_inv(nn.Module):
         # compute the nearest-neighbor correlations
         corr = 0.5*jnp.einsum( '...i,ij,...j',x,W[self.lattice.neighbors_distances],x )
 
-        # compute the mean field part
-        def one_mf(state):
-            indices = jnp.array( (1+state)/2, dtype=int)
+        # # compute the mean field part
+        # def one_mf(state):
+        #     indices = jnp.array( (1+state)/2, dtype=int)
             
             
-            def one_phi(i, index):
-                return phi[i, index]
+        #     def one_phi(i, index):
+        #         return phi[i, index]
             
-            return vmap(one_phi)(jnp.arange(N), indices)
+        #     return vmap(one_phi)(jnp.arange(N), indices)
         
-        mf = vmap(one_mf)(x)
+        # mf = vmap(one_mf)(x)
+        mf = Psi_MF(jnp.array(phi), x)
         
         return corr + jnp.sum(jnp.log(mf), axis=-1)
 
@@ -210,18 +238,18 @@ class JMF3_inv(nn.Module):
         J3 = jnp.einsum( 'ijm,ni->mjn',W3[self.lattice.neighbors_distances],x ) #sigma_i, sigma_j,n=Ns (n_neighbors,N,Ns)
         J3 = jnp.einsum( 'ijjn,ni,nj->n',J3[self.lattice.neighbors_distances],x,x ) #sigma_i, sigma_j n=Ns
 
-        # compute the mean field part
-        def one_mf(state):
-            indices = jnp.array( (1+state)/2, dtype=int)
+        # # compute the mean field part
+        # def one_mf(state):
+        #     indices = jnp.array( (1+state)/2, dtype=int)
             
             
-            def one_phi(i, index):
-                return phi[i, index]
+        #     def one_phi(i, index):
+        #         return phi[i, index]
             
-            return vmap(one_phi)(jnp.arange(N), indices)
+        #     return vmap(one_phi)(jnp.arange(N), indices)
         
-        mf = vmap(one_mf)(x)
+        # mf = vmap(one_mf)(x)
+        mf = Psi_MF(phi, x)
         
         return J2 + J3 + jnp.sum(jnp.log(mf), axis=-1)
-    
     

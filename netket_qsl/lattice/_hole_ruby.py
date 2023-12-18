@@ -1,7 +1,7 @@
 import numpy as np
 
 from ._ruby import Ruby
-
+from ._hexagons import Hexagons
 
 class HoleRuby(Ruby):
     '''
@@ -75,3 +75,68 @@ class HoleRuby(Ruby):
 
         self.positions = np.delete( self.positions, to_delete, 0 )
  
+    @property
+    def hexagons(self):
+        '''
+        Defines the (partial) hexagons of the lattice
+        
+        In this case, to allow for completion in 6-tuples, the hexagons touching the 
+        center hole had to be split it two separate contours. 
+        Since they touch a border, they are already not closed contours, 
+        so this should not matter too much.,
+        '''
+        if not self._hexagons:
+            sites = [
+                [0,9],
+                [3,12,1],
+                [6,15,4],
+                [18,7],
+                [10,21,33],
+                [2,13,24,36,22,11],
+                [5,16,27,39,25,14],
+                [8,19,30,42,28,17],
+                [45,31,20],
+                [34,48,63],
+                [23,37,51,66,49,35],
+                [26,40,54,69,52,38],
+                [29,43,57,72,55,41],
+                [32,46,60,75,58,44],
+                [78,61,47],
+                [64,81,99],
+                [50,67,84,102,82,65],
+                [53,70,87,105,85,68],
+                [56,73,90],
+                [88,71],
+                [59,76,93,108,91,74],
+                [62,79,96,111,94,77],
+                [114,97,80],
+                [100,117],
+                [83,103,120,138,118,101],
+                [86,106,123,141,121,104],
+                [144,126,124],
+                [89,107],
+                [92,109,129],
+                [147,127],
+                [95,112,132,150,130,110],
+                [98,115,135,153,133,113],
+                [136,116],
+                [119,139,156],
+                [122,142,159,174,157,140],
+                [125,145,162,177,160,143],
+                [128,148,165,180,163,146],
+                [131,151,168,183,166,149],
+                [134,154,171,186,169,152],
+                [137,172,155],
+                [158,175,189],
+                [161,178,192,204,190,176],
+                [164,181,195,207,193,179],
+                [167,184,198,210,196,182],
+                [170,187,201,213,199,185],
+                [173,202,188],
+                [191,205],
+                [194,208,206],
+                [197,211,209],
+                [200,214,212],
+                [203,215]
+                ]
+            self._hexagons = Hexagons(sites, allow_five=True)
