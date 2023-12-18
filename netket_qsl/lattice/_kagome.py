@@ -301,9 +301,9 @@ class Kagome:
         For example : 
 
         fig, ax = plt.subplots(1,1, figsize=(6,4))
-        lattice.plot_lattice(ax, True, True,-np.ones(N))
+        lattice.plot(ax, True, True,-np.ones(N))
         ax.axis('off')
-        plt.show() 
+        plt.show()
 
         ax : AxesSubPlot on which to plot the lattice
         annotate : boolean indicating wether we write down the indices of the atoms

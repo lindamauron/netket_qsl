@@ -37,10 +37,10 @@ def Renyi2(
 def _probs(occupancy,n_vertices,n_samples):
 
     # find out how many of each configuration is present in total
-    p0 = mpi_statistics(jnp.count_nonzero((occupancy-0)==0)/n_vertices/n_samples) # no dimer
-    p1 = mpi_statistics(jnp.count_nonzero((occupancy-1)==0)/n_vertices/n_samples) # one dimer
-    p2 = mpi_statistics(jnp.count_nonzero((occupancy-2)==0)/n_vertices/n_samples) # two dimers
-    p3 = mpi_statistics(jnp.count_nonzero((occupancy-3)==0)/n_vertices/n_samples) # three dimers
-    p4 = mpi_statistics(jnp.count_nonzero((occupancy-4)==0)/n_vertices/n_samples) # four dimers
+    p0 = mpi_statistics(jnp.count_nonzero((occupancy-0)==0)/n_vertices/n_samples+0j) # no dimer
+    p1 = mpi_statistics(jnp.count_nonzero((occupancy-1)==0)/n_vertices/n_samples+0j) # one dimer
+    p2 = mpi_statistics(jnp.count_nonzero((occupancy-2)==0)/n_vertices/n_samples+0j) # two dimers
+    p3 = mpi_statistics(jnp.count_nonzero((occupancy-3)==0)/n_vertices/n_samples+0j) # three dimers
+    p4 = mpi_statistics(jnp.count_nonzero((occupancy-4)==0)/n_vertices/n_samples+0j) # four dimers
 
     return p0,p1,p2,p3,p4

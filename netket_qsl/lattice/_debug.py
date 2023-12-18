@@ -72,16 +72,16 @@ class TwoTriangles(Square):
     def hexagons(self):
         return None
     
-    def plot_lattice(self, ax, annotate=False, plot_lines=False, sample=None):
+
+    def plot(self, ax=None, sample=None, annotate=False, plot_lines=False):
         '''
         Plots the lattice on a chosen figure with annotation of the atoms
         For example : 
 
         fig, ax = plt.subplots(1,1, figsize=(6,4))
-        lattice.plot_lattice(ax, True, True)
+        lattice.plot(ax, True, True,-np.ones(N))
         ax.axis('off')
         plt.show() 
-
 
         ax : AxesSubPlot on which to plot the lattice
         annotate : boolean indicating wether we write down the indices of the atoms
@@ -89,7 +89,7 @@ class TwoTriangles(Square):
                      (helps for visibility but takes quite longer to load, i.e. do not do many times)
         sample : one specific sample to draw. In this sample, +1 is red and -1 is green
         '''
-        super().plot_lattice(ax, annotate=annotate, plot_lines=plot_lines, sample=sample)
+        ax = super().plot(ax, annotate=annotate, plot_lines=plot_lines, sample=sample)
             
         # If indicated, plot the lattice's structure    
         if plot_lines:

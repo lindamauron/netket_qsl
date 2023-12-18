@@ -41,22 +41,26 @@ def vdW_potential(hi:_SpinHilbert, lattice:_Kagome, Rb:float=2.4, Rcut:float=np.
     # Construct the interaction matrix by precomputing the distances ratio up to a cut-off
     # we define our matrix R_ij = (Rb/rij)^6 for rij < Rcut but with zeros on the diagonal 
     # it will be used for every update, so we do not compute it every time
-    R = lattice.distances
+    R = lattice.distances.copy()
     np.fill_diagonal(R, 1)
     R = (Rb/R)**6
     R[lattice.distances>Rcut] = 0
     np.fill_diagonal(R, 0)
 
-    V = 0
-    d = lattice.distances
+    # V = 0
+    # d = lattice.distances
 
-    # sum over all pairs
-    for i in range(N):
-        for j in range(i+1,N):
+    # # sum over all pairs
+    # for i in range(N):
+    #     for j in range(i+1,N):
             
-            # cutting radius
-            if d[i,j] <= Rcut:
-                V += r_occ(hi,i)*r_occ(hi,j) * (Rb/d[i,j])**6
+    #         # cutting radius
+    #         if d[i,j] <= Rcut:
+    #             V += r_occ(hi,i)*r_occ(hi,j) * R[i,j]
+
+    # this does the same thing but uses the R matrix (with vector multiplication) instead of a double sum
+    r_occs = np.array([r_occ(hi,i) for i in range(N)])
+    V = r_occs.T @ R @ r_occs/2 #factor of two because each pair is counted twice
                     
     return V, R
 
@@ -66,7 +70,7 @@ class Rydberg_Hamiltionian:
     H = -Ω(t)/2 \sum_i X_i - Δ(t) \sum_i n_i + Ω(t)/2 \sum_ij (Rb/r_ij)^6 n_i n_j
     where :
         - the schedule of Ω(t), Δ(t) is entirely defined by the sweep_time
-        - Rb is a parameter usually set to 3th neighbor
+        - Rb is a parameter usually set to 3rd neighbor
         - the potential can be cut up to a certain distance (Rcut)
 
     Hamiltonian(t) can be called

@@ -80,6 +80,19 @@ def eval_O(phi,R):
     Z_term = 0.5* b2.T@R@b2
     return X_term + Z_term
 
+def eval_N2(phi):
+    N = phi.shape[0]
+    a = phi[:,0]
+    b = phi[:,1]
+
+    ni = (b.conj()*b ).real
+
+    N2 = 0
+    for i in range(N):
+        N2 += (ni[i] * ni[i+1:]).sum()
+    
+    return ni.sum()/N + 2*N2/N**2 - ni.sum()**2/N**2
+
 
 class TDVP_MF(AbstractVariationalDriver):
     """
@@ -394,6 +407,7 @@ class TDVP_MF(AbstractVariationalDriver):
             phi = self.state.parameters['ϕ']
             N = phi.shape[0]
             n_mean = eval_N(phi,self.generator.R)/N +0j
+            # n_var = eval_N2(phi)
 
             log_dict['n'] = Stats(mean=n_mean, variance=0, error_of_mean=0, tau_corr=0, R_hat=0, tau_corr_max=0)
 

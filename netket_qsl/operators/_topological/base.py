@@ -1,6 +1,6 @@
 from typing import Tuple
 import abc
-from functools import partial
+from functools import partial, lru_cache
 
 import numpy as np
 import jax
@@ -8,12 +8,13 @@ from jax import jit
 import jax.numpy as jnp
 import scipy.sparse
 
-from typing import Union
+from typing import Union, Optional
 
 import netket as nk
 from netket.hilbert import Spin as _SpinHilbert
 from netket.operator._abstract_operator import AbstractOperator
 from netket.utils.types import Array, ArrayLike, DType
+import netket.jax as nkjax
 from scipy.sparse import csr_matrix as _csr_matrix
 from numbers import Number
 
@@ -164,9 +165,9 @@ class TopoOperator(AbstractOperator):
     
 
 
-
-
-def o_loc(logpsi, pars, sigma, extra_args):
+from netket.jax import vmap_chunked
+@partial(jit, static_argnames=("logpsi", "chunk_size"))
+def o_loc(logpsi, pars, sigma, extra_args, chunk_size):
     '''
     Local energy of the operator O_loc(x) = sum_x' <x|O|x'> psi(x')/psi(x)
 
@@ -174,77 +175,41 @@ def o_loc(logpsi, pars, sigma, extra_args):
     '''
 
     eta, mels = extra_args
-    # check that sigma has been reshaped to 2D, eta is 3D
+    # check that sigma has been reshaped to 2D, eta is 2D
     # sigma is (Nsamples, Nsites)
     assert sigma.ndim == 2
-    # eta is (Nsamples, Nconnected, Nsites)
+    # eta is (Nsamples, Nsites) since there is only 1 connected element for each sample
     assert eta.ndim == 2
     
     # let's write the local energy assuming a single sample, and vmap it
-    @partial(jax.vmap, in_axes=(0, 0, 0))
+    @partial(vmap_chunked, in_axes=(0, 0, 0), chunk_size=chunk_size)
     def _loc_vals(sigma, eta, mels):
         return mels * jnp.exp(logpsi(pars, eta) - logpsi(pars, sigma))
     
     return _loc_vals(sigma, eta, mels)
 
-@nk.vqs.get_local_kernel.dispatch
-def get_local_kernel(vstate: nk.vqs.MCState, op: TopoOperator):
-    return o_loc
+
+# @nk.vqs.get_local_kernel.dispatch
+# def get_local_kernel(vstate: nk.vqs.MCState, op: TopoOperator):
+#     return o_loc
 
 @nk.vqs.get_local_kernel_arguments.dispatch
-def get_local_kernel_arguments(vstate: nk.vqs.MCState, op: TopoOperator):
+def get_local_kernel_arguments(vstate: nk.vqs.MCState, op: TopoOperator, chunk_size: Optional[int]):
     '''
     Compute the extra arguments for the o_loc operators, i.e. the connected elements and matrix elements
+
+    for samples of shape (n_chains,n_samples,N) 
+    returns: Tuple (eta,mels) containing the connected elements (eta) and matrix elements (mel) #(n_chains,n_samples,N), (n_chains_n_samples,)
     '''
     sigma = vstate.samples
-    # get the connected elements. Reshape the samples because that code only works
-    # if the input is a 2D matrix
-    extra_args = op.get_conns_and_mels(sigma.reshape(-1, vstate.hilbert.size))
+    
+    # get the connected elements. 
+    extra_args = vmap_chunked(op.get_conns_and_mels, chunk_size=chunk_size)(sigma) #(n_chains,n_samples,N), (n_chains_n_samples,)
     return sigma, extra_args
 
-
-@nk.vqs.expect.dispatch
-def expect(vstate: nk.vqs.MCState, op:TopoOperator):
-    sigma, extra_args = get_local_kernel_arguments(vstate, op)
-
-    n_chains = sigma.shape[-2]
-    N = sigma.shape[-1]
-    sigma = sigma.reshape(-1, N)
-
-    #eta, mels = extra_args
-
-
-    E_loc = o_loc(vstate._apply_fun, vstate.variables, sigma, extra_args).reshape(-1, n_chains)
-
-
-    return nk.stats.statistics(E_loc)
-
-
-
-from functools import  lru_cache
-from netket.stats import Stats
-
-
 @lru_cache(5)
-def sparsify(Ô):
+def sparsify(Ô:TopoOperator):
     """
     Converts to sparse but also cache the sparsificated result to speed up.
     """
     return Ô.to_sparse()
-
-
-@nk.vqs.expect.dispatch
-def expect(vstate: nk.vqs.FullSumState, Ô: TopoOperator) -> Stats:
-
-    O = sparsify(Ô)
-    Ψ = vstate.to_array()
-
-    # TODO: This performs the full computation on all MPI ranks.
-    # It would be great if we could split the computation among ranks.
-
-    OΨ = O @ Ψ
-    expval_O = (Ψ.conj() * OΨ).sum()
-
-    variance = jnp.sum(jnp.abs(OΨ - expval_O * Ψ) ** 2)
-    return Stats(mean=expval_O, error_of_mean=0.0, variance=variance)
-

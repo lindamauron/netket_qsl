@@ -19,7 +19,7 @@ class DimerProbabilities:
     """
     def __init__(self,hilbert:_SpinHilbert,lattice:_Kagome, bulk:bool=False):
         '''
-        hilbert: hilbert sdpace on which to compute qunatities
+        hilbert: hilbert space on which to compute qunatities
         lattice: lattice of which vertice's we want the occupation
             the lattice should have a container s.t. lattice.vertices[k]['atoms'] = [atoms connected to vertex k]
         bulk: bool indicating whether the probabilities are computed only inside the bulk or not
