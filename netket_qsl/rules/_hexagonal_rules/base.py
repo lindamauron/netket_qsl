@@ -110,30 +110,33 @@ def _global_transition_batch(key, σ, hexs):
     # choose for each hexagon wether or not we apply the string
     # since the mean is at sum p_i = n_hexs p, p = mean/n_hexs = 0.5
     #p = self.mean_global/n_hexs
-    conds = jax.random.choice(key, jnp.array([True,False]), shape=(n_chains,n_hexs) )
+    # conds = jax.random.choice(key, jnp.array([True,False]), shape=(n_chains,n_hexs) )
 
-    def _one_transition(conds, s):
-        '''
-        travels across all hexagons
-        for i in range(0,n_hexs):
-            s = _bodyfun(i,s)
-        return s
-        '''
+    # def _one_transition(conds, s):
+    #     '''
+    #     travels across all hexagons
+    #     for i in range(0,n_hexs):
+    #         s = _bodyfun(i,s)
+    #     return s
+    #     '''
 
-        def _body_fun(i, s):
-            '''
-            executes one hexagon if condition
-            if conds[i]:
-                _apply(s, hexs[i])
-            else:
-                _do_nothing(s, hexs[i])
-            '''
-            return jax.lax.cond( conds[i], _apply, _do_nothing, s, hexs[i] )
+    #     def _body_fun(i, s):
+    #         '''
+    #         executes one hexagon if condition
+    #         if conds[i]:
+    #             _apply(s, hexs[i])
+    #         else:
+    #             _do_nothing(s, hexs[i])
+    #         '''
+    #         return jax.lax.cond( conds[i], _apply, _do_nothing, s, hexs[i] )
 
-        x = jax.lax.fori_loop(0, n_hexs, _body_fun, s)
+    #     x = jax.lax.fori_loop(0, n_hexs, _body_fun, s)
 
-        return x
+    #     return x
 
 
-    return vmap(_one_transition, in_axes=(0,0))(conds, σ)
+    # return vmap(_one_transition, in_axes=(0,0))(conds, σ)
+
+    which = jax.random.choice(key,n_hexs,(n_chains,))
+    return vmap(_apply, in_axes=(0,0))(σ, hexs[which])
     

@@ -38,14 +38,16 @@ class TopoOperator(AbstractOperator):
         hilbert : Hilbert space on which the operator acts
         sites : the sites of the lattice where we want to apply the operator
                 can be a single site i or a list of them [i,j,...]
-                the operator is then applied starting by sites[0] and so on
+                the operator is read in the matrix order, i.e. from right to left.
+                This means that it is applied starting by sites[-1] and so on => the representation changes the order of the sites
         scalar : the constant multiplying the operator 
         '''
         
-        self.sites = np.array(sites, int) # convert to int since we want to iterate over
+        sites = np.array(sites, int) # convert to int since we want to iterate over
         # to be able to iterate over even for a single site
-        if self.sites.ndim == 0:
-            self.sites = self.sites.reshape((1))
+        if sites.ndim == 0:
+            sites = sites.reshape((1))
+        self.sites = sites[::-1]
 
         self.scalar = scalar
             
@@ -103,9 +105,9 @@ class TopoOperator(AbstractOperator):
         if isinstance(other, type(self)):
             
             # we append the sites so that we first apply the string the most on the right (since they do not commute)
-            new_sites = np.append( other.sites, self.sites)
+            new_sites = np.append( self.sites[::-1], other.sites[::-1])
             
-            return type(self)(self.hilbert, new_sites, self.scalar)
+            return type(self)(self.hilbert, new_sites, self.scalar*other.scalar)
         
         if not np.issubdtype(type(other), np.number):
             raise NotImplementedError
@@ -124,6 +126,10 @@ class TopoOperator(AbstractOperator):
     
     def __neg__(self) -> "TopoOperator":
         return -1.0*self
+    
+    @property
+    def T(self):
+        return type(self)(self.hilbert, self.sites, self.scalar)
         
     def __repr__(self):
         return f"{self.scalar}*{type(self).__name__}(hilbert={self.hilbert}, sites={self.sites}, dtype={self.dtype})"
