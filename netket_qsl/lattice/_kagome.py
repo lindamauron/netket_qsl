@@ -3,10 +3,12 @@ import networkx as nx
 import netket as nk
 import abc
 import matplotlib.pyplot as plt
+import warnings 
 
 from functools import partial
 from jax import vmap, jit
 import jax.numpy as jnp
+from netket.utils.types import Array
 
 from ._hexagons import Hexagons
     
@@ -295,7 +297,7 @@ class Kagome:
         return self._graph
 
 
-    def plot(self, ax=None, sample=None, annotate=False, plot_lines=False):
+    def plot(self, ax=None, to_draw=None, annotate=False, plot_lines=False):
         '''
         Plots the lattice on a chosen figure with annotation of the atoms
         For example : 
@@ -309,19 +311,68 @@ class Kagome:
         annotate : boolean indicating wether we write down the indices of the atoms
         plot_lines : boolean indicating wether we want the lattice structure (lines) plotted as well
                      (helps for visibility but takes quite longer to load, i.e. do not do many times)
-        sample : one specific sample to draw. In this sample, +1 is red and -1 is green
+        to_draw : what to draw on the lattice
+                    can be: a state (ndarray, |g> in black, |r> in red)
+                            a topological operator (sites on the contour in blue, rest in black)
+                            a product op topological operators (each operator has its colour following the default cycle)
         '''
         if not ax:
             fig, ax = plt.subplots(1,1, figsize=(6,4))
 
-        c = np.tile(['darkgreen', 'r'], (self.N,))
+        # Plot operators, partitions, etc
+        if hasattr(to_draw, "draw") and callable(to_draw.draw):
+            state, colors = to_draw.draw()
 
-        # by default, we just do all green i.e. |g>
-        if sample is None:
-            sample = -np.ones(self.N)
-        assert sample.ndim == 1, 'The sample to draw must be one dimensional'
+        # if hasattr(to_draw, "sites"):
+        #     state = np.zeros(self.N, dtype=int)
+        #     state[to_draw.sites] = 1
+            
+        #     colors = ['k', 'b']
 
-        state = np.array( (1+sample)/2, int)
+        # # Plot product of operators
+        # elif hasattr(to_draw, "operators"):
+            # for op in to_draw.operators:
+            #     if not hasattr(op, "sites"):
+            #         raise AttributeError(f'The input to draw has operators but {op} has no attribute sites')
+                
+            # assert len(to_draw.operators) <= 10, 'The drawing for so many operators is not defined'
+
+            # colors = ['k']
+            # state = np.zeros(self.N, dtype=int)
+            # for k,op in enumerate(to_draw.operators):
+            #     state[op.sites] = k+1
+            #     colors.append(f'C{k}')
+            
+        # plot samples, if many, plot only the first one
+        elif isinstance(to_draw, Array) and to_draw.shape[-1] == self.N:
+            if to_draw.ndim != 1:
+                warnings.warn(f'Array to plot has shape {to_draw.shape}, only first configuration is shown')
+                to_draw = to_draw.reshape(-1,self.N)[0]
+            
+            state = np.array( (1+to_draw)/2, dtype=int)
+            colors = ['k', 'r']
+
+        elif isinstance(to_draw, Array) or isinstance(to_draw, list):
+            to_draw = np.array(to_draw).reshape(-1)
+            if not (to_draw<self.N).all() or not (to_draw>=0).all():
+                raise ValueError(f'A list of sites must have indices in the right range, instead got range [{to_draw.min()}, to_draw.max()]')
+            
+            state = np.zeros(self.N, dtype=int)
+            state[to_draw] = 1
+
+            colors = ['k', 'r']
+        else:
+            state = np.zeros(self.N, dtype=int)
+            colors = ['k']
+        c = np.tile(colors, (self.N,))
+
+        # c = np.tile(['darkgreen', 'r'], (self.N,))
+        # # by default, we just do all green i.e. |g>
+        # if sample is None:
+        #     sample = -np.ones(self.N)
+        # assert sample.ndim == 1, 'The sample to draw must be one dimensional'
+
+        # state = np.array( (1+sample)/2, int)
 
         pos = self.positions/self.a
         

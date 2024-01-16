@@ -5,20 +5,24 @@ import numpy as np
 import jax
 from jax import vmap, jit
 import jax.numpy as jnp
+import warnings
 
-from netket.utils.types import DType as _DType
+from typing import Union, Optional
+from netket.utils.types import Array, ArrayLike, DType
+from netket.hilbert import Spin as _SpinHilbert
 
-from QSL.lattice import neighbors
+from ...lattice._utils import neighbors
 from .base import TopoOperator
 
 
 class QX(TopoOperator):
     '''
     Defines the off-diagonal operator, denoted X in Semeghini, Q in Verresen, rotated in the X basis
-
-    
     '''
-
+    def __init__(self, hilbert:_SpinHilbert, sites:Union[int,Array,ArrayLike], scalar=1.0):
+        warnings.warn('The X-basis classes are not updated', DeprecationWarning)
+        super().__init__(hilbert,sites,scalar)
+        
     @partial(jit, static_argnums=0)
     def _conn_one_triangle(self, x:jnp.ndarray, i:int) -> Tuple[jnp.ndarray, jnp.ndarray]:
         '''
@@ -60,6 +64,10 @@ class PX(TopoOperator):
     Defines the off-diagonal operator, denoted Z in Semeghini, P in Verresen, rotated in the X basis
     This operator is diagonal, so it always returns the same state, yet the amplitude of this is sj sk if it is applied on i (i,j,k nn)
     '''
+    def __init__(self, hilbert:_SpinHilbert, sites:Union[int,Array,ArrayLike], scalar=1.0):
+        warnings.warn('The X-basis classes are not updated', DeprecationWarning)
+        super().__init__(hilbert,sites,scalar)
+
 
     @partial(jit, static_argnums=0)
     def _conn_one_triangle(self, x:jnp.ndarray, i:int) -> Tuple[jnp.ndarray, jnp.ndarray]:
@@ -88,6 +96,11 @@ class RX(TopoOperator):
     Defines the off-diagonal operator, not used in Semeghini but should generate f-anyons on the lattice
     This is the product of Q0 P2 applied on multiple triangles, generalized on any site of the triangle, rotated in the X basis
     '''
+
+    def __init__(self, hilbert:_SpinHilbert, sites:Union[int,Array,ArrayLike], scalar=1.0):
+        warnings.warn('The X-basis classes are not updated', DeprecationWarning)
+        super().__init__(hilbert,sites,scalar)
+
 
     @partial(jit, static_argnums=0)
     def _conn_one_triangle(self, x:jnp.ndarray, i:int) -> Tuple[jnp.ndarray, jnp.ndarray]:

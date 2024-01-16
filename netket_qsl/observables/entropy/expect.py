@@ -86,7 +86,7 @@ def Renyi2(
         
         op.rng, _ = jax.random.split(op.rng)
 
-        sigma_S = entropies.var()
+        sigma_S = entropies.real.var()
         return Stats(mean=entropies.mean(),
                      variance=sigma_S,
                      error_of_mean=jnp.sqrt(sigma_S/op.n_boots),

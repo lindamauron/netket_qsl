@@ -118,3 +118,25 @@ def sort_W(W, lattice):
 
     return np.take_along_axis(W, args, axis=-1)
 
+
+################### MPI functionalities ###################
+from mpi4py import MPI
+comm = MPI.COMM_WORLD
+def mpi_print(*values, sep=' ', end='\n', file=None, flush=False, only_once=True) -> None:
+    '''
+    Allows to print information on one from one single mpi rank, avoiding the repetition.
+    There is also the posbility to print on each rank, specifying the rank for each print.
+    only_once: bool indicating whether one wants to print only on rank 0 or on all ranks
+    This works as the usual print function.
+
+    returns: print(*values)
+    '''
+    rank = comm.Get_rank()
+
+    if only_once and rank==0:
+        return print(*values, sep=sep, end=end, file=file, flush=flush)
+    elif not only_once:
+        values = (f'Rank {rank} : ',) + values
+        return print(*values, sep=sep, end=end, file=file, flush=flush)
+
+    return

@@ -18,11 +18,6 @@ import netket.jax as nkjax
 from scipy.sparse import csr_matrix as _csr_matrix
 from numbers import Number
 
-""" 
-Was tested and works
-Is it better to use than the previous operator ???
-Says so in NetKet's API
-"""
 
 class TopoOperator(AbstractOperator):
     '''
@@ -47,20 +42,39 @@ class TopoOperator(AbstractOperator):
         # to be able to iterate over even for a single site
         if sites.ndim == 0:
             sites = sites.reshape((1))
-        self.sites = sites[::-1]
+        if len(sites)==0:
+            raise AttributeError(f"The operator needs at least one site to be declared, instead got {sites}")
+        self._sites = sites
 
-        self.scalar = scalar
+        self._scalar = scalar
             
         super().__init__(hilbert)
         
 
+    @property
+    def sites(self):
+        return self._sites
+    
+    @property
+    def scalar(self):
+        return self._scalar
+    
     @property
     def dtype(self) -> DType:
         '''
         The dtype of the operator's matrix elements ⟨σ|Ô|σ'⟩.
         '''
         return float
+    
+    def __getitem__(self, item):
+        return self.sites[item]
+    
+    def draw(self):
+        state = np.zeros(self.hilbert.size, dtype=int)
+        state[self.sites] = 1
         
+        colors = ['k', 'b']
+        return state, colors
         
     @property
     def max_conn_size(self) -> int:
@@ -102,34 +116,57 @@ class TopoOperator(AbstractOperator):
         Possibility to multiply two same operators OR the op by a number, nothing else
         Multiplying T1*T2 first applies T2 then T1 (for any TopoOperator T)
         '''
+        # self*other
         if isinstance(other, type(self)):
-            
-            # we append the sites so that we first apply the string the most on the right (since they do not commute)
-            new_sites = np.append( self.sites[::-1], other.sites[::-1])
+            # we append the sites and cancel the ones touching since O*O = 1 for all O
+            sitesA = self.sites
+            sitesB = other.sites
+            # while len(sitesA)>0 and len(sitesB)>0 and sitesA[-1] == sitesB[0]:
+            #     sitesA = sitesA[:-1]
+            #     sitesB = sitesB[1:]
+            new_sites = np.append( sitesA, sitesB )
             
             return type(self)(self.hilbert, new_sites, self.scalar*other.scalar)
         
-        if not np.issubdtype(type(other), np.number):
-            raise NotImplementedError
+        elif np.issubdtype(type(other), np.number):
+            return type(self)(self.hilbert, self.sites, self.scalar*other)
+        
+        return other.__rmul__(self)
+        # except NotImplementedError:
+        #     try:
+        #         return Product(self.hilbert,[self,other], self.scalar)
             
-        return type(self)(self.hilbert, self.sites, self.scalar*other)
-
+        #     except AttributeError:
+        #         raise NotImplementedError
+        
+        # raise NotImplementedError
+            
         
     def __rmul__(self, other:Union["TopoOperator",Number]):
+        # other * self
         if isinstance(other, type(self)):
             return other.__mul__(self)
         
-        if not np.issubdtype(type(other), np.number):
-            raise NotImplementedError
-            
-        return type(self)(self.hilbert, self.sites, self.scalar*other)
-    
+        elif np.issubdtype(type(other), np.number):
+            return type(self)(self.hilbert, self.sites, self.scalar*other)
+        
+        return Product(self.hilbert, [other,self], self.scalar)
+                
     def __neg__(self) -> "TopoOperator":
         return -1.0*self
     
+    def __rtruediv__(self,other):
+        # other / self
+        return other * self.T
+    
+    def __truediv__(self,other):
+        #self/other
+        return self * (1/other)
+    
+    
     @property
     def T(self):
-        return type(self)(self.hilbert, self.sites, self.scalar)
+        return type(self)(self.hilbert, self.sites[::-1], self.scalar)
         
     def __repr__(self):
         return f"{self.scalar}*{type(self).__name__}(hilbert={self.hilbert}, sites={self.sites}, dtype={self.dtype})"
@@ -219,3 +256,152 @@ def sparsify(Ô:TopoOperator):
     Converts to sparse but also cache the sparsificated result to speed up.
     """
     return Ô.to_sparse()
+
+
+class Product(TopoOperator):
+    '''
+    Instance to use when multiplying topological operators:
+    Multiplication(hi,[P,Q]).apply(psi) = Q@P|psi>
+    This takes into account the fact that operators of the same type commute, while not doing any assumption on other relations.
+    
+    This class then allows for efficient expectation values of multiplied topological operators on large scales of the lattice.
+    '''
+
+    def __init__(self,hilbert,operators,scalar=1.0):
+        for op in operators:
+            if not np.issubdtype(type(op), TopoOperator):
+                raise AttributeError(f"Product works only on operators, instead got {op}")
+            
+            if hilbert != op.hilbert:
+                raise ValueError(f'All hilbert spaces must be identical, got {hilbert} and {op.hilbert}')
+        self._hilbert = hilbert
+
+        # assembles the operators by appending sites if same type (can reduce the complexity of the operator)
+        ops = []
+        i = 0
+        while i < len(operators):
+            k=i+1
+            op = operators[i]
+
+            while k<len(operators) and type(operators[i]) == type(operators[k]):
+                op = op*operators[k]
+                operators = np.delete(operators, k)
+            else:
+                i += 1
+            ops.append( op )
+            
+        # Now that we simplified averything we could, make a proper list
+        operators = []
+        for op in ops:
+            scalar *= op.scalar
+            operators.append(op*(1/op.scalar))
+
+        self._operators = np.array(operators)
+        self._scalar = scalar
+
+        self.n_operators = len(self.operators)
+
+    @property
+    def operators(self):
+        return self._operators
+    
+    def draw(self):
+        assert len(self.operators) <= 10, 'The drawing for so many operators is not defined'
+
+        colors = ['k']
+        state = np.zeros(self.hilbert.size, dtype=int)
+        for k,op in enumerate(self.operators):
+            state[op.sites] = k+1
+            colors.append(f'C{k}')
+    
+        return state, colors
+    
+
+    def __getitem__(self, item):
+        return self.operators[item]
+    
+
+    def _conn_one_triangle(self, x: Array, i: int) -> Tuple[Array, Array]:
+        m = 1
+
+        for op in self.operators:
+            if i in op.sites:
+                x, new_m = op._conn_one_triangle(x, i)
+            m = new_m * m
+
+        return x, m
+    
+    def get_conns_and_mels(self, sigma):
+        ms = jnp.ones(sigma.shape[0])
+
+        for i in range(self.n_operators):
+            sigma, new_ms = self[i].get_conns_and_mels(sigma)
+            ms *= new_ms
+        return sigma, self.scalar*ms
+
+
+    def __repr__(self):
+        str = f'{self.scalar}*Product(hilbert={self.hilbert}, '
+        for i in range(self.n_operators):
+            if i!=0:
+                str += '@'
+            str += f" {type(self[i]).__name__}({self[i].sites}) "
+        return str+f', dtype={self.dtype})'
+
+    def __mul__(self, other):
+        '''
+        '''
+        #self*other
+        if isinstance(other, Product):
+            ops = []
+            for o in self.operators:
+                ops.append(o)
+            for o in other.operators:
+                ops.append(o)
+            return Product(self.hilbert, ops, self.scalar*other.scalar)
+        
+        elif isinstance(other, TopoOperator):
+            # i.e. self * O
+            ops = list(self.operators)
+            ops.append(other)
+            return Product(self.hilbert,ops, scalar=self.scalar)
+        
+        elif np.issubdtype(type(other), np.number):
+            return type(self)(self.hilbert, self.operators, self.scalar*other)
+
+        raise NotImplementedError
+            
+    def __rmul__(self,other):   
+        #other * self  
+        if isinstance(other, TopoOperator):
+            ops = list(self.operators)[::-1]
+            ops.append(other)
+            return Product(self.hilbert,ops[::-1], scalar=self.scalar)
+        elif np.issubdtype(type(other), np.number):
+            return type(self)(self.hilbert, self.operators, self.scalar*other)
+        
+        return NotImplementedError
+
+
+    
+    @property
+    def T(self):
+        ops = []
+        for o in self.operators:
+            ops.append(o.T)
+        return Product(self.hilbert, ops[::-1], self.scalar)
+
+    def to_sparse(self):
+        '''
+        Returns the sparse matrix representation of the operator. Note that,
+        in general, the size of the matrix is exponential in the number of quantum
+        numbers, and this operation should thus only be performed for
+        low-dimensional Hilbert spaces or sufficiently sparse operators.
+
+        return : sparse matrix representation of the operator.
+        '''
+        res = scipy.sparse.eye(self.hilbert.n_states)
+        for op in self.operators:
+            res = res@( op.to_sparse() )
+
+        return res

@@ -73,7 +73,7 @@ class TwoTriangles(Square):
         return None
     
 
-    def plot(self, ax=None, sample=None, annotate=False, plot_lines=False):
+    def plot(self, ax=None, to_draw=None, annotate=False, plot_lines=False):
         '''
         Plots the lattice on a chosen figure with annotation of the atoms
         For example : 
@@ -87,9 +87,12 @@ class TwoTriangles(Square):
         annotate : boolean indicating wether we write down the indices of the atoms
         plot_lines : boolean indicating wether we want the lattice structure (lines) plotted as well
                      (helps for visibility but takes quite longer to load, i.e. do not do many times)
-        sample : one specific sample to draw. In this sample, +1 is red and -1 is green
+        to_draw : what to draw on the lattice
+                    can be: a state (ndarray, |g> in black, |r> in red)
+                            a topological operator (sites on the contour in blue, rest in black)
+                            a product op topological operators (each operator has its colour following the default cycle)        
         '''
-        ax = super().plot(ax, annotate=annotate, plot_lines=plot_lines, sample=sample)
+        ax = super().plot(ax, annotate=annotate, plot_lines=plot_lines, to_draw=to_draw)
             
         # If indicated, plot the lattice's structure    
         if plot_lines:

@@ -8,7 +8,7 @@ import jax.numpy as jnp
 
 from netket.utils.types import DType as _DType
 
-from QSL.lattice import neighbors
+from ...lattice._utils import neighbors
 from .base import TopoOperator
 
 
@@ -17,8 +17,8 @@ class Q_alpha(TopoOperator):
     Defines the off-diagonal operator, denoted X in Semeghini, Q in Verresen with arbitrary phase factor exp(i alpha)
     Applied on site i, it swaps sj<->sk if sj sk = -1 and flips si<->-si otherwise (for i,j,k nn)
     '''
-    def __init__(self, hilbert, sites, alpha=0.0):
-        super().__init__(hilbert, sites)
+    def __init__(self, hilbert, sites, scalar=1.0, alpha=0.0):
+        super().__init__(hilbert, sites, scalar)
         self.q = jnp.exp(1j*alpha)
 
     @partial(jit, static_argnums=0)

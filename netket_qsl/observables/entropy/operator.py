@@ -94,6 +94,13 @@ class Renyi2EntanglementEntropy:
         list of indices for the degrees of freedom in the partition
         """
         return self._partition
+    
+    def draw(self):
+        state = np.zeros(self.hilbert.size, dtype=int)
+        state[self.partition] = 1
+        
+        colors = ['k', 'r']
+        return state, colors
 
     def __repr__(self):
         return f"Renyi2EntanglementEntropy(hilbert={self.hilbert}, partition={self.partition})"
@@ -103,3 +110,4 @@ class Renyi2EntanglementEntropy:
         key = nkjax.mpi_split(key)
         self.rng = key      
         return    
+

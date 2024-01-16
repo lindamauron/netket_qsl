@@ -2,6 +2,7 @@
 
 from ._topological import (
     TopoOperator, 
+    Product,
     P, 
     Q, 
     R
