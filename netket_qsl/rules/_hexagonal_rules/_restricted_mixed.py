@@ -14,6 +14,12 @@ from .._restricted import RestrictedRule
 from .._triangle._Q import _flip_one_Q_
 
 
+from netket.utils import struct
+@struct.dataclass
+class MixedRuleState:
+    probs: jnp.ndarray
+
+
 @jit
 def _restr_local_transition(key, σ, hexs):
     return _restr_local_transition_batch(key, σ.reshape(1,-1), hexs).reshape(-1)
@@ -52,30 +58,53 @@ class RestrictedMixedRule(RestrictedRule):
     So, we have to redefine the random_state, to start in the right space
 
     The process is :
-    1. The type of move is chosen (global with probability p_global)
+    1. The type of move is chosen (sampler_state.rule_state.probs=[p_global,p_local])
     2. The move is applied
-        2a. For global, Q is applied on each hexagon with a probability of 1/2, so that the mean number of applied hexagons corresponds to n_hexagons/2 
-            (this minimizes the probability to apply on zero/all hexagon)
-        2b. For local, a spin is chosen to be flipped. There, one can choose the way to do this respecting staying in the restricted space. 
-            Choice between : 
-            - swap : if another spin was excited, it is is flipped and spin i is excited
-            - unchanged : if another spin was excited, it stays this way and i is not flipped
-            - Q : if another spin was excited, it is is swaped with the third spin and i is unchanged, as for the operator Q    
-        
-    hexs : container of the hexagons on the lattice
-    p_global : the probability to do a global move (then 1-p_global is the prob to do a local move)
+        2a. For global, Q is applied on one random hexagon
+        2b. For local, Q is applied on one random site
+
+    Construction : 
+    lattice: lattice on which the state acts
+    hexs: filled hexagons of the lattice (jax-compatible)
+    initial_probs: probailities for the [0]:global move [1]local move
     '''
     hexs : jnp.ndarray
-    p_global : float = 0.5
+    initial_probs: jnp.ndarray
+
+    def __pre_init__(self,lattice,probs,*args,**kwargs):
+        """
+        Prepares the class attribute hexs and probs
+        """
+        kwargs['hexs'] = jnp.array(lattice.hexagons.filled)
+        ps = jnp.asarray(probs)
+
+        if len(ps) != 2:
+            raise ValueError(
+                "Length mismatch between the probabilities and the rules: probabilities "
+                f"has length {len(ps)} , rules has length 2."
+            )
+        
+        if not jnp.allclose(jnp.sum(ps), 1.0):
+            raise ValueError(
+                "The probabilities must sum to 1, but they sum to "
+                f"{jnp.sum(ps)}."
+            )
+        
+        kwargs['initial_probs'] = ps/ps.sum()
+        return args, kwargs
+
+    def init_state(self, sampler, machine, params, key):
+        return MixedRuleState(probs=self.initial_probs)
+    
 
     def __repr__(self):
         '''
         Representation of the class
         '''
         if self.hexs.shape[0] <= 6:
-            return f'RestrictedMixedRule( local=TriangleQ, p_global = {self.p_global}, {self.hexs.shape[0]} hexagons: {self.hexs})'
+            return f'RestrictedMixedRule( local=TriangleQ, p_initial = {self.initial_probs}, {self.hexs.shape[0]} hexagons: {self.hexs})'
 
-        return f'RestrictedMixedRule( local=TriangleQ, p_global = {self.p_global}, {self.hexs.shape[0]} hexagons)'
+        return f'RestrictedMixedRule( local=TriangleQ, p_initial = {self.initial_probs}, {self.hexs.shape[0]} hexagons)'
 
     def transition(self, sampler: "sampler.MetropolisSampler", machine: nn.Module, params: PyTree, sampler_state: "sampler.SamplerState", key: PRNGKeyT, σ: jnp.ndarray) -> Tuple[jnp.ndarray, Optional[jnp.ndarray]]:
         r'''
@@ -99,7 +128,7 @@ class RestrictedMixedRule(RestrictedRule):
         key, _ = jax.random.split(key)
         
         # do we apply the global move (otherwise, local)
-        conds = jax.random.choice(key, jnp.array([True,False]), shape=(n_chains,), p=jnp.array([self.p_global,1-self.p_global]) )
+        conds = jax.random.choice(key, jnp.array([True,False]), shape=(n_chains,), p=sampler_state.rule_state.probs )
         keys = jax.random.split(key,n_chains)
 
         # applies the rule on one sample

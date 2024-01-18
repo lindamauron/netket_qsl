@@ -90,10 +90,10 @@ def _global_transition(key, σ, hexs):
 @jit
 def _global_transition_batch(key, σ, hexs):
     '''
-    Defines a transition rule where we apply (or not) the Q operator on multiple hexagons of the lattice
+    Defines a transition rule where we choose randomly (uniformly) an hexagon on which to apply Q
 
-    key: The PRNGKey to use to generate the random state.
-    σ  initial spin chains
+    key: The PRNGKey for the random choice
+    σ:  initial spin chains
 
     returns : new chain (...,N)
     '''
