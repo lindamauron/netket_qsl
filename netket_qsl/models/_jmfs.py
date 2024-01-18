@@ -141,7 +141,7 @@ class JMF_inv(nn.Module):
     lattice : _Kagome
     """The lattice on which the model acts."""
 
-    n_neighbors : int
+    # n_neighbors : int
     """The number of neighboors possible on the lattice."""
 
     param_dtype : Any = jnp.complex128
@@ -164,7 +164,7 @@ class JMF_inv(nn.Module):
 
         # Define the two variational parameters W and h
         W = self.param(
-            'W', self.jastrow_init, (self.n_neighbors,), self.param_dtype
+            'W', self.jastrow_init, (self.lattice.n_distances,), self.param_dtype
         )
         
         phi = self.param(
@@ -197,7 +197,7 @@ class JMF3_inv(nn.Module):
     lattice : _Kagome
     """The lattice on which the model acts."""
 
-    n_neighbors : int
+    # n_neighbors : int
     """The number of neighboors possible on the lattice."""
 
     param_dtype : Any = jnp.complex128
@@ -220,11 +220,11 @@ class JMF3_inv(nn.Module):
 
         # Define the two variational parameters W and h
         W2 = self.param(
-            'W2', self.jastrow_init, (self.n_neighbors,), self.param_dtype
+            'W2', self.jastrow_init, (self.lattice.n_distances,), self.param_dtype
         )
 
         W3 = self.param(
-            'W3', self.jastrow_init, (self.n_neighbors,self.n_neighbors), self.param_dtype
+            'W3', self.jastrow_init, (self.lattice.n_distances,self.lattice.n_distances), self.param_dtype
         )
         
         phi = self.param(
