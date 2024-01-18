@@ -8,20 +8,31 @@ class HoleRuby(Ruby):
     Kagome lattice in a Ruby shape as in Semeghini et al. with a hole in the middle. 
     Standard shape is Ruby(a=3.9, extents_down=[3,4,5,6,7,6,5], extents_up=[4,5,6,7,6,5,4]), but we took away the central triangle. 
     
-    This lattice is only defined for one particular shape. 
+    This lattice is only defined for two particular shapes. 
     '''
     
     ## Initilization methods ##
-    def __init__(self, a=1.0):
+    def __init__(self, a=1.0, N=216):
         '''
         Defines the positions of each atom in the lattice
         a : unit cell size in μm
+        N: umber of sites (choose between 216 or 285 for now)
         '''
-        super().__init__(a, extents_down=[3,4,5,6,7,6,5], extents_up=[4,5,6,7,6,5,4])
+        if N==216:
+            super().__init__(a, extents_down=[3,4,5,6,7,6,5], extents_up=[4,5,6,7,6,5,4])
+        elif N==285:
+            super().__init__(a, extents_down=[4,5,6,7,8,7,6,5], extents_up=[5,6,7,8,7,6,5,4])
+        else:
+            raise AttributeError(f'There is not implementation with N={N} yet.')
 
 
     def check_shape(self, extents_up, extents_down):
-        assert extents_down==[3,4,5,6,7,6,5] and extents_up==[4,5,6,7,6,5,4], "This implementation is only implemented for the article's lattice."
+        '''
+        Verifies whether the chosen shape has been implemented.
+        '''
+        if not (extents_down==[3,4,5,6,7,6,5] and extents_up==[4,5,6,7,6,5,4]) and not (extents_down==[4,5,6,7,8,7,6,5] and extents_up==[5,6,7,8,7,6,5,4]):
+            print(extents_down, extents_up)
+            raise AttributeError("This implementation is only implemented for specific lattices.")
 
         
     def __repr__(self):
@@ -37,8 +48,10 @@ class HoleRuby(Ruby):
         ex : for vertex #k, vertices[k]['atoms'] = [atoms it possesses], vertices[k]['triangles'] = [triangles it possesses]
         '''
         vertices = super().construct_vertices()
-
-        to_delete = [108, 109, 110]
+        if self.N==219:
+            to_delete = [108, 109, 110]
+        elif self.N==288:
+            to_delete = [108,109,110]
 
         # we need to find in which vertices are the atoms to delete
 
@@ -86,57 +99,84 @@ class HoleRuby(Ruby):
         so this should not matter too much.,
         '''
         if not self._hexagons:
-            sites = [
-                [0,9],
-                [3,12,1],
-                [6,15,4],
-                [18,7],
-                [10,21,33],
-                [2,13,24,36,22,11],
-                [5,16,27,39,25,14],
-                [8,19,30,42,28,17],
-                [45,31,20],
-                [34,48,63],
-                [23,37,51,66,49,35],
-                [26,40,54,69,52,38],
-                [29,43,57,72,55,41],
-                [32,46,60,75,58,44],
-                [78,61,47],
-                [64,81,99],
-                [50,67,84,102,82,65],
-                [53,70,87,105,85,68],
-                [56,73,90],
-                [88,71],
-                [59,76,93,108,91,74],
-                [62,79,96,111,94,77],
-                [114,97,80],
-                [100,117],
-                [83,103,120,138,118,101],
-                [86,106,123,141,121,104],
-                [144,126,124],
-                [89,107],
-                [92,109,129],
-                [147,127],
-                [95,112,132,150,130,110],
-                [98,115,135,153,133,113],
-                [136,116],
-                [119,139,156],
-                [122,142,159,174,157,140],
-                [125,145,162,177,160,143],
-                [128,148,165,180,163,146],
-                [131,151,168,183,166,149],
-                [134,154,171,186,169,152],
-                [137,172,155],
-                [158,175,189],
-                [161,178,192,204,190,176],
-                [164,181,195,207,193,179],
-                [167,184,198,210,196,182],
-                [170,187,201,213,199,185],
-                [173,202,188],
-                [191,205],
-                [194,208,206],
-                [197,211,209],
-                [200,214,212],
-                [203,215]
-                ]
-            self._hexagons = Hexagons(sites, allow_five=True)
+            
+            # we get the hexagons from the lattice without hole
+            hexs = super().hexagons.sites
+            # know which sites to delete
+            if self.N==216:
+                to_delete = [108, 109, 110]
+            elif self.N==285:
+                to_delete = [108,109,110]
+
+            sites = []
+            for h in hexs:
+                new_hex = []
+                for i in h:
+                    # before the whole : numerotation is unchanged
+                    if i < np.min(to_delete):
+                        new_hex.append(i)
+                    # the hole is deleted
+                    # elif np.isin(i,to_delete):
+                        # do nothing
+                    # after the hole, numbering has to be updated
+                    elif i > np.max(to_delete):
+                        new_hex.append( i-len(to_delete) )
+                
+                sites.append( new_hex )
+
+            # sites = [
+            #     [0,9],
+            #     [3,12,1],
+            #     [6,15,4],
+            #     [18,7],
+            #     [10,21,33],
+            #     [2,13,24,36,22,11],
+            #     [5,16,27,39,25,14],
+            #     [8,19,30,42,28,17],
+            #     [45,31,20],
+            #     [34,48,63],
+            #     [23,37,51,66,49,35],
+            #     [26,40,54,69,52,38],
+            #     [29,43,57,72,55,41],
+            #     [32,46,60,75,58,44],
+            #     [78,61,47],
+            #     [64,81,99],
+            #     [50,67,84,102,82,65],
+            #     [53,70,87,105,85,68],
+            #     [56,73,90],
+            #     [88,71],
+            #     [59,76,93,108,91,74],
+            #     [62,79,96,111,94,77],
+            #     [114,97,80],
+            #     [100,117],
+            #     [83,103,120,138,118,101],
+            #     [86,106,123,141,121,104],
+            #     [144,126,124],
+            #     [89,107],
+            #     [92,109,129],
+            #     [147,127],
+            #     [95,112,132,150,130,110],
+            #     [98,115,135,153,133,113],
+            #     [136,116],
+            #     [119,139,156],
+            #     [122,142,159,174,157,140],
+            #     [125,145,162,177,160,143],
+            #     [128,148,165,180,163,146],
+            #     [131,151,168,183,166,149],
+            #     [134,154,171,186,169,152],
+            #     [137,172,155],
+            #     [158,175,189],
+            #     [161,178,192,204,190,176],
+            #     [164,181,195,207,193,179],
+            #     [167,184,198,210,196,182],
+            #     [170,187,201,213,199,185],
+            #     [173,202,188],
+            #     [191,205],
+            #     [194,208,206],
+            #     [197,211,209],
+            #     [200,214,212],
+            #     [203,215]
+            #     ]
+            self._hexagons = Hexagons(sites, complete_to_eight=True) # we complete to 8 to enable sampling by hexagon
+
+        return self._hexagons

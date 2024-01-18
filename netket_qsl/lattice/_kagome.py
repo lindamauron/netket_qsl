@@ -68,9 +68,10 @@ class Kagome:
         self._graph = None
         self._distances = None
         self._neighbors_distances = None
-        self._n_distances = None
-        
-        
+        ## we compute this in any case, because the function is not jax-compatible and the lattice might be used in models
+        self._n_distances = np.max(self.neighbors_distances)+1
+
+
     # Construction methods (are called at init in any case)
     def construct_pos(self):
         '''
@@ -314,7 +315,7 @@ class Kagome:
         to_draw : what to draw on the lattice
                     can be: a state (ndarray, |g> in black, |r> in red)
                             a topological operator (sites on the contour in blue, rest in black)
-                            a product op topological operators (each operator has its colour following the default cycle)
+                            a product of topological operators (each operator has its colour following the default cycle)
         '''
         if not ax:
             fig, ax = plt.subplots(1,1, figsize=(6,4))
@@ -323,26 +324,6 @@ class Kagome:
         if hasattr(to_draw, "draw") and callable(to_draw.draw):
             state, colors = to_draw.draw()
 
-        # if hasattr(to_draw, "sites"):
-        #     state = np.zeros(self.N, dtype=int)
-        #     state[to_draw.sites] = 1
-            
-        #     colors = ['k', 'b']
-
-        # # Plot product of operators
-        # elif hasattr(to_draw, "operators"):
-            # for op in to_draw.operators:
-            #     if not hasattr(op, "sites"):
-            #         raise AttributeError(f'The input to draw has operators but {op} has no attribute sites')
-                
-            # assert len(to_draw.operators) <= 10, 'The drawing for so many operators is not defined'
-
-            # colors = ['k']
-            # state = np.zeros(self.N, dtype=int)
-            # for k,op in enumerate(to_draw.operators):
-            #     state[op.sites] = k+1
-            #     colors.append(f'C{k}')
-            
         # plot samples, if many, plot only the first one
         elif isinstance(to_draw, Array) and to_draw.shape[-1] == self.N:
             if to_draw.ndim != 1:
@@ -361,23 +342,21 @@ class Kagome:
             state[to_draw] = 1
 
             colors = ['k', 'r']
+
+        elif isinstance(to_draw, tuple):
+            state, colors = to_draw
+            state = np.asanyarray(state)
+
+            if state.shape!=(self.N,) or np.max(state)!=len(colors)-1:
+                raise ValueError("To draw a tuple, one needs a color for each site")
         else:
             state = np.zeros(self.N, dtype=int)
             colors = ['k']
         c = np.tile(colors, (self.N,))
 
-        # c = np.tile(['darkgreen', 'r'], (self.N,))
-        # # by default, we just do all green i.e. |g>
-        # if sample is None:
-        #     sample = -np.ones(self.N)
-        # assert sample.ndim == 1, 'The sample to draw must be one dimensional'
-
-        # state = np.array( (1+sample)/2, int)
-
         pos = self.positions/self.a
         
         # represent each atom on the right position with the right color
-        #for i in range(self.N):
         ax.scatter( pos[:,0], pos[:,1], color=c[state], zorder=10 )   
 
         # annotate if indicated
@@ -538,19 +517,16 @@ class Kagome:
                     nn.append( j )
             
         return nn
-    
+        
     @property
     def n_distances(self):
         '''
         Number of different distances existing on the lattice (i.e. number of different values in neighbors_distances)
 
         return : float () with the number of distances 
-        '''
-        if self._n_distances is None:
-            self._n_distances = np.max(self.neighbors_distances)+1
-        
+        '''        
         return self._n_distances
-
+    
     @property
     def neighbors_distances(self):
         '''
