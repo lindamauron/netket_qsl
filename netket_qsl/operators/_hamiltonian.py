@@ -86,6 +86,7 @@ class Rydberg_Hamiltionian:
         Rb : Rydberg blockade radius in units of a (lattice vector)
         '''
         N = lattice.N
+        self._hilbert = hi
 
         # The total number of Rydberg excitations on the lattice
         self.N_op = sum([r_occ(hi,i) for i in range(N)])
@@ -100,9 +101,14 @@ class Rydberg_Hamiltionian:
         self.frequencies = frequencies
 
         # Infos of the operator
-        self._str = f'Hamiltonian({lattice}, (Ω,Δ)={frequencies}, Rb={Rb}, Rcut={Rcut})'
+        self._str = f'Hamiltonian({self.hilbert}, \n \t {lattice},\n \t (Ω,Δ)={frequencies},\n \t Rb={Rb}, Rcut={Rcut}\n)'
 
-    def __repr__(self):
+    @property
+    def hilbert(self) -> _SpinHilbert:
+        return self._hilbert
+    
+
+    def __repr__(self) -> str:
         '''
         Representation of the class
         '''

@@ -12,27 +12,43 @@ class HoleRuby(Ruby):
     '''
     
     ## Initilization methods ##
-    def __init__(self, a=1.0, N=216):
+    def __init__(self, a, N=None, extents_down=None, extents_up=None, to_delete=None):
         '''
         Defines the positions of each atom in the lattice
         a : unit cell size in μm
         N: umber of sites (choose between 216 or 285 for now)
+        extents_down : list of extents of the down triangles
+        extents_up : list of extents of the up triangles
+                        Both should be compatible
+        to_delete: sites of the lattice to delete, i..e where the hole is located
+                    the sites should cover a whole triangle (for now, only compatible with one single triangle)
         '''
         if N==216:
+            self.to_delete = np.sort([108, 109, 110])
             super().__init__(a, extents_down=[3,4,5,6,7,6,5], extents_up=[4,5,6,7,6,5,4])
+
         elif N==285:
+            self.to_delete = np.sort([108,109,110])
             super().__init__(a, extents_down=[4,5,6,7,8,7,6,5], extents_up=[5,6,7,8,7,6,5,4])
+
+        elif extents_down and extents_up and to_delete:
+            self.to_delete = np.sort(to_delete)
+            t = self.to_delete[0]//3
+            if not len(to_delete)==3 or (to_delete!=3*t+np.array([0,1,2])).any():
+                raise AttributeError(f'One needs to delete a triangle, instead got {self.to_delete}')
+            super().__init__(a, extents_down=extents_down, extents_up=extents_up)
+
         else:
             raise AttributeError(f'There is not implementation with N={N} yet.')
 
 
-    def check_shape(self, extents_up, extents_down):
-        '''
-        Verifies whether the chosen shape has been implemented.
-        '''
-        if not (extents_down==[3,4,5,6,7,6,5] and extents_up==[4,5,6,7,6,5,4]) and not (extents_down==[4,5,6,7,8,7,6,5] and extents_up==[5,6,7,8,7,6,5,4]):
-            print(extents_down, extents_up)
-            raise AttributeError("This implementation is only implemented for specific lattices.")
+    # def check_shape(self, extents_up, extents_down):
+    #     '''
+    #     Verifies whether the chosen shape has been implemented.
+    #     '''
+    #     if not (extents_down==[3,4,5,6,7,6,5] and extents_up==[4,5,6,7,6,5,4]) and not (extents_down==[4,5,6,7,8,7,6,5] and extents_up==[5,6,7,8,7,6,5,4]):
+    #         print(extents_down, extents_up)
+    #         raise AttributeError("This implementation is only implemented for specific lattices.")
 
         
     def __repr__(self):
@@ -48,13 +64,9 @@ class HoleRuby(Ruby):
         ex : for vertex #k, vertices[k]['atoms'] = [atoms it possesses], vertices[k]['triangles'] = [triangles it possesses]
         '''
         vertices = super().construct_vertices()
-        if self.N==219:
-            to_delete = [108, 109, 110]
-        elif self.N==288:
-            to_delete = [108,109,110]
+        to_delete = self.to_delete
 
         # we need to find in which vertices are the atoms to delete
-
         for k,v in enumerate(vertices):
             for x in to_delete:
                 if np.isin(v['atoms'], x ).any():
@@ -63,7 +75,7 @@ class HoleRuby(Ruby):
                     
         for v in vertices:
             for k,x in enumerate(v['atoms']):
-                if x>to_delete[2]:
+                if x>np.max(to_delete):
                     v['atoms'][k]-=3
 
         del_nonbord = []
@@ -84,7 +96,7 @@ class HoleRuby(Ruby):
         '''
         super().construct_positions()
 
-        to_delete = [108, 109, 110]
+        to_delete = self.to_delete
 
         self.positions = np.delete( self.positions, to_delete, 0 )
  
@@ -99,17 +111,14 @@ class HoleRuby(Ruby):
         so this should not matter too much.,
         '''
         if not self._hexagons:
-            
+            hexs = super().hexagons
+
             # we get the hexagons from the lattice without hole
-            hexs = super().hexagons.sites
-            # know which sites to delete
-            if self.N==216:
-                to_delete = [108, 109, 110]
-            elif self.N==285:
-                to_delete = [108,109,110]
+            # hexs = super().hexagons.sites
+            to_delete = self.to_delete
 
             sites = []
-            for h in hexs:
+            for h in hexs.sites:
                 new_hex = []
                 for i in h:
                     # before the whole : numerotation is unchanged

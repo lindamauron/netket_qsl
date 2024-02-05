@@ -48,8 +48,8 @@ class RVB(nn.Module):
         )
 
 
-        chi = jnp.ones((N,N))
-        self.chi = chi.at[ (self.lattice.neighbors_distances<=1) + (self.lattice.neighbors_distances>=4) ].set(0)
+        chi = jnp.zeros((N,N))
+        self.chi = chi.at[ (self.lattice.neighbors_distances==2) + (self.lattice.neighbors_distances==3) ].set(1)
 
         
         z = self.chi.sum(-1)

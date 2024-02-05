@@ -38,9 +38,9 @@ class Ruby(Square):
         self.atoms = self.construct_atoms(self.vertices)
         self.triangles = self.construct_triangles(self.vertices, self.atoms)
 
-        self._hexagons = None
         
         # Properties of the lattice
+        self._hexagons = None
         self._nn = None
         self._graph = None
         self._distances = None
@@ -54,20 +54,35 @@ class Ruby(Square):
         return f'RubyLattice(N={self.N}, shape={self.extents_up, self.extents_down})'
             
     def check_shape(self, extents_up, extents_down):
-        assert len(extents_up) == len(extents_down), "The lattice should start with down triangles and end with up triangles"
+        '''
+        Verifies whether the extentst given describe indeed a Ruby-shaped lattice as defined. 
+        '''
+        # check same length
+        if len(extents_up)!=len(extents_down):
+            raise AttributeError("The lattice should start with down triangles and end with up triangles")
+        
+        extents_down= np.array(extents_down)
+        extents_up= np.array(extents_up)
 
-        assertion = True
-        flag_growing = True
-        for k in range(len(extents_down)):
+        # verify that this increases then decreases
+        diff = extents_down[:-1]-extents_down[1:]
+        idx = np.argmax(diff)
+        if (diff[:idx]!=-1).any() or (diff[idx:]!=1).any():
+            raise AttributeError("The extents should first increase, then decrease")
 
-            if extents_down[k] < extents_up[k]:
-                assertion = (extents_down[k] == extents_up[k]-1)
-                flag_growing = False
+        # verify that this increases then decreases
+        diff = extents_up[:-1]-extents_up[1:]
+        idx = np.argmax(diff)
+        if (diff[:idx]!=-1).any() or (diff[idx:]!=1).any():
+            raise AttributeError("The extents should change by step of 1 exactly")
 
-            elif not flag_growing :
-                assertion = (extents_down[k] == extents_up[k]+1)
-
-            assert assertion, "extents not compatible"
+        # check that we always have the right difference between both
+        growing = extents_up - extents_down
+        idx = np.argmin(growing)
+        if (growing[idx:]!=-1).any() or (growing[:idx]!=1).any():
+            raise AttributeError("Extents must describe a Ruby form (increasing then decreasing)")
+        
+        return True
             
     
     ## Constructing the connexions in the lattice ##
@@ -520,6 +535,10 @@ class Ruby(Square):
                     [275,287]
                 ], dtype=object)
                 self._hexagons = Hexagons(sites)
+            else:
+                sites = np.array(_construct_hexagons_ruby(Ruby(self.a,self.extents_down,self.extents_up)), dtype=object)
+                self._hexagons = Hexagons(sites)
+
 
         return self._hexagons
 
@@ -580,6 +599,70 @@ class Ruby(Square):
             ax.set_ylim([np.min(pos[:,1])-2,np.max(pos[:,1])+2])
 
 
-        return
+        return ax
     
 
+def _find_in_sublists(lst, value):
+    for sub_i, sublist in enumerate(lst):
+        try:
+            return (sub_i, True, sublist.index(value))
+        except ValueError:
+            pass
+
+    return ([], False, 0)
+
+
+def _construct_hexagons_ruby(lattice):
+    '''
+    Construct the container of hexagons for a general ruby lattice.
+    The constructor's complexity is O(N^2), so avoid if possible
+
+    lattice: lattice for which one wants the haxagons
+
+    returns: list of list of the sites sharing the same hexagon (no regular shape).
+    '''
+    if not issubclass(type(lattice), Ruby):
+        raise ValueError('This constructor is only for ruby lattice (might work on OBC).')
+    
+    hexagons = []
+    secondnn = lattice.find_neighbors(2)
+    N = lattice.N
+
+    for i in range(N):
+        others = np.array(secondnn[i])
+
+        if len(others)==1: # we are on the border
+            idx, flag, _ = _find_in_sublists(hexagons,i)
+
+            if not flag: #didnt find i
+                idx, flag, _ = _find_in_sublists(hexagons,others[0])
+
+                if flag: #found others
+                    hexagons[idx].append( i )
+
+                else: #didnt find others
+                    hexagons.append( [i,others[0]] )
+
+            else: #found i, add others if not already in
+                if not np.isin(others[0],hexagons[idx]):
+                    hexagons[idx].append( others[0] )
+            
+
+        # add all sites
+        elif (others>i).all():
+            new_hex = []
+            new_hex.append( i )
+            for x in others:
+                new_hex.append( x )
+            hexagons.append(new_hex)
+
+        elif not (others>i).any():
+            pass
+
+        else :
+            idx, flag, _ = _find_in_sublists(hexagons,i)
+            if flag:
+                if not np.isin(np.max(others), hexagons[idx]):
+                    hexagons[idx].append( np.max(others) )
+
+    return hexagons

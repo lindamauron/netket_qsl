@@ -9,6 +9,7 @@ from netket.utils.types import DType as _DType
 from netket.utils.types import Array as _Array
 from ..lattice import Kagome as _Kagome
 
+import numpy as np 
 import jax.numpy as jnp
 from functools import partial
 from jax import jit
@@ -24,6 +25,7 @@ def X(hilbert:_SpinHilbert, i:int, restricted:bool=True) -> _LocalOperator:
     
     hilbert : hilbert space of the system
     i : site on which to apply the operator
+    restricted : flag indicating whether to work in the restricted space (setting 0 outisde the space)
     
     returns : LocalOperator
     '''
@@ -38,6 +40,7 @@ def Z(hilbert:_SpinHilbert, i:int, restricted:bool=True) -> _LocalOperator:
 
     hilbert : hilbert space of the system
     i : site on which to apply the operator
+    restricted : flag indicating whether to work in the restricted space (setting 0 outisde the space)
     
     returns : LocalOperator
     '''
@@ -50,6 +53,7 @@ def Y(hilbert:_SpinHilbert, i:int, restricted:bool=True) -> _LocalOperator:
 
     hilbert : hilbert space of the system
     i : site on which to apply the operator
+    restricted : flag indicating whether to work in the restricted space (setting 0 outisde the space)
     
     returns : LocalOperator
     '''
@@ -58,72 +62,83 @@ def Y(hilbert:_SpinHilbert, i:int, restricted:bool=True) -> _LocalOperator:
     else:
         return sigmay(hilbert,i)
 
-def sigma_plus(hilbert:_SpinHilbert, i:int, restricted:bool=True) -> _LocalOperator:
-    '''
-    Builds the :math:`σ^+= |r><g|` operator acting on the i-th site of the (restricted) Hilbert space `hilbert`
-
-    hilbert : hilbert space of the system
-    i : site on which to apply the operator
-    
-    returns : LocalOperator
-    '''
-    if isinstance(hilbert, _TriangleHilbertSpace) or restricted:
-        return _restricted_sigmap(hilbert,i)
-    else:
-        return sigmam(hilbert,i)
-
-
 def sigma_minus(hilbert:_SpinHilbert, i:int, restricted:bool=True) -> _LocalOperator:
     '''
-    Builds the :math:`σ^-= |g><r|` operator acting on the i-th site of the (restricted) Hilbert space `hilbert`
+    Builds the :math:`σ^-=|r><g|` operator acting on the i-th site of the (restricted) Hilbert space `hilbert`
 
     hilbert : hilbert space of the system
     i : site on which to apply the operator
+    restricted : flag indicating whether to work in the restricted space (setting 0 outisde the space)
     
     returns : LocalOperator
     '''
     if isinstance(hilbert, _TriangleHilbertSpace) or restricted:
         return _restricted_sigmam(hilbert,i)
     else:
+        return sigmam(hilbert,i)
+
+
+def sigma_plus(hilbert:_SpinHilbert, i:int, restricted:bool=True) -> _LocalOperator:
+    '''
+    Builds the :math:`σ^+=|g><r|` operator acting on the i-th site of the (restricted) Hilbert space `hilbert`
+
+    hilbert : hilbert space of the system
+    i : site on which to apply the operator
+    restricted : flag indicating whether to work in the restricted space (setting 0 outisde the space)
+    
+    returns : LocalOperator
+    '''
+    if isinstance(hilbert, _TriangleHilbertSpace) or restricted:
+        return _restricted_sigmap(hilbert,i)
+    else:
         return sigmap(hilbert,i)
 
 
-def g_occ(hilbert:_SpinHilbert, i:int) -> _LocalOperator: 
+def g_occ(hilbert:_SpinHilbert, i:int, restricted:bool=True) -> _LocalOperator: 
     '''
     Builds the :math:`P_g=|g><g|` operator acting on the i-th site of the (restricted) Hilbert space `hilbert`
 
     hilbert : hilbert space of the system
     i : site on which to apply the operator
+    restricted : flag indicating whether to work in the restricted space (setting 0 outisde the space)
     
     returns : LocalOperator
     '''
-    return sigmap(hilbert,i)*sigmam(hilbert,i)
+    D = np.zeros((2,2))
+    D[0,0] = 1.0
+    
+    return _LocalOperator(hilbert, D, i)
 
-def r_occ(hilbert:_SpinHilbert, i:int) -> _LocalOperator: 
+def r_occ(hilbert:_SpinHilbert, i:int, restricted:bool=True) -> _LocalOperator: 
     '''
     Builds the :math:`P_r=|r><r|=n` operator acting on the i-th site of the (restricted) Hilbert space `hilbert`
 
     hilbert : hilbert space of the system
     i : site on which to apply the operator
+    restricted : flag indicating whether to work in the restricted space (setting 0 outisde the space)
     
     returns : LocalOperator
     '''
-    return sigmam(hilbert,i)*sigmap(hilbert,i)
+    D = np.zeros((2,2))
+    D[1,1] = 1.0
+    
+    return _LocalOperator(hilbert, D, i)
 
 
-def r_density(hilbert:_SpinHilbert, lattice:_Kagome) -> _LocalOperator:
+def r_density(hilbert:_SpinHilbert, lattice:_Kagome, restricted:bool=True) -> _LocalOperator:
     '''
     Builds the :math:`n = 1/N sum_i n_i` operator acting on the i-th site of the (restricted) Hilbert space `hilbert`
 
     hilbert : hilbert space of the system
     lattice : lattice on which we want the mean (gives the number of sites)
+    restricted : flag indicating whether to work in the restricted space (setting 0 outisde the space)
 
     returns : LocalOperator
     '''
     N = lattice.N
 
     # The total number of Rydberg excitations on the lattice
-    N_op = sum([r_occ(hilbert,i) for i in range(N)])
+    N_op = sum([r_occ(hilbert,i,restricted) for i in range(N)])
 
     # Mean number of Rydberg exitations
     return N_op/N
