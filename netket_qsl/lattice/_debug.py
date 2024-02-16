@@ -2,7 +2,8 @@ import numpy as np
 
 
 from ._square import Square
-
+from ._ruby import Ruby
+from ._hexagons import Hexagons
 
 class OneTriangle(Square):
     '''
@@ -24,7 +25,7 @@ class OneTriangle(Square):
 class TwoTriangles(Square):
     '''
     Non periodic Kagome lattice with only two triangles, i.e. 6 sites.
-    This is a special case useful for debugging since the corresponding hilbert space is small nough for all computations. 
+    This is a special case useful for debugging since the corresponding hilbert space is small enough for all computations. 
     We define the positions of the triangles differently from the other lattice, which is why we do a special case for this
     '''
     def __init__(self,a=1.0):
@@ -109,4 +110,39 @@ class TwoTriangles(Square):
             ax.set_ylim([-3,pos[-1,1]+3])
 
         return
+    
+
+class OneStar(Ruby):
+    '''
+    Non periodic Kagome lattice with only six triangles (star), i.e. 18 sites.
+    This is a special case useful for debugging since the corresponding hilbert space is small enough for all computations. 
+    We define the positions of the triangles differently from the other lattice, which is why we do a special case for this
+    '''
+    def __init__(self,a=1.0):
+        '''
+        a : minimal distance between two atoms
+        '''
+        super().__init__(1.0,[1,2], [2,1])
+
+
+    def check_shape(self, extents_up, extents_down):
+        '''
+        Verifies whether the extentst given describe indeed a Ruby-shaped lattice as defined. 
+        '''
+        if not extents_down==[1,2] or not extents_up==[2,1]:
+            raise AttributeError('This lattice can only have one shape. ')
+        return True
+            
+    @property
+    def hexagons(self):
+        '''
+        Defines the (partial) hexagons of the lattice
+        '''
+        if not self._hexagons:
+            sites = [[0,3], [1,6], 
+                     [4,9], [2,7,12,15,10,5], [13,8], 
+                     [11,16], [14,17]
+                     ]
+            self._hexagons = Hexagons(sites)
+        return self._hexagons
     

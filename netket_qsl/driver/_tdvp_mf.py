@@ -61,17 +61,27 @@ def bI_dot(phi,t, R, freq):
 
     return z_factor(phi,t, R, freq)*z_term + x_factor(phi,t, R, freq)*x_term
 
+def b_dot(phi,t,R,freq):
+    a = phi[:,0]
+    b = phi[:,1]
+    # bR = phi[:,1].real
+    # bI = phi[:,1].imag
+    return -1j*z_factor(phi,t,R,freq)*b + 1j*x_factor(phi,t,R,freq)*(b*b.real/a - a)
+def a_dot(phi,t,R,freq):
+    a = phi[:,0]
+    b = phi[:,1]
+
+    return x_factor(phi,t,R,freq)*b.imag
 
 
 ## Measurements
 def eval_N(phi,R):
-    a = phi[:,0]
+    # a = phi[:,0]
     b = phi[:,1]
 
     return np.sum(b.conj()*b)
 
 def eval_O(phi,R):
-
     a = phi[:,0]
     b = phi[:,1]
 
@@ -182,23 +192,16 @@ class TDVP_MF(AbstractVariationalDriver):
         return Stats(mean=mean_E, variance=0, error_of_mean=0, tau_corr=0, R_hat=0, tau_corr_max=0)
     
     def _backward(self,t,phi):
-        #pars = self.state.parameters
-        #phi = pars['ϕ']
-        a = phi[:,0]
-        bR = phi[:,1].real
-        bI = phi[:,1].imag
+        """
+        Compute the backward pass.
+        t: time at which to make the pass
+        phi : mean-field parameters φ
+        """
+        db = b_dot(phi,t,self.generator.R,self.generator.frequencies)
+        da = a_dot(phi,t,self.generator.R,self.generator.frequencies)
+        dphi = np.array([ da, db ]).T
 
-        dbR = bR_dot(phi,t,self.generator.R, self.generator.frequencies)
-        dbI = bI_dot(phi,t,self.generator.R, self.generator.frequencies)
-        da = -(bR*dbR + bI*dbI)/a
-
-        dphi = np.array([ da, dbR + 1j*dbI ]).T
-
-        #dtheta = flax.core.unfreeze(tree_map(lambda x: 0*x, pars))
-        #dtheta['ϕ'] = dphi
-
-
-        return dphi #flax.core.FrozenDict(dtheta)
+        return dphi
 
     
     def iter(self, T: float, *, tstops: Optional[Sequence[float]] = None):

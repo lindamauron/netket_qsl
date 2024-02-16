@@ -536,7 +536,7 @@ class Ruby(Square):
                 ], dtype=object)
                 self._hexagons = Hexagons(sites)
             else:
-                sites = np.array(_construct_hexagons_ruby(Ruby(self.a,self.extents_down,self.extents_up)), dtype=object)
+                sites = super()._construct_hexagons()
                 self._hexagons = Hexagons(sites)
 
 
@@ -601,68 +601,3 @@ class Ruby(Square):
 
         return ax
     
-
-def _find_in_sublists(lst, value):
-    for sub_i, sublist in enumerate(lst):
-        try:
-            return (sub_i, True, sublist.index(value))
-        except ValueError:
-            pass
-
-    return ([], False, 0)
-
-
-def _construct_hexagons_ruby(lattice):
-    '''
-    Construct the container of hexagons for a general ruby lattice.
-    The constructor's complexity is O(N^2), so avoid if possible
-
-    lattice: lattice for which one wants the haxagons
-
-    returns: list of list of the sites sharing the same hexagon (no regular shape).
-    '''
-    if not issubclass(type(lattice), Ruby):
-        raise ValueError('This constructor is only for ruby lattice (might work on OBC).')
-    
-    hexagons = []
-    secondnn = lattice.find_neighbors(2)
-    N = lattice.N
-
-    for i in range(N):
-        others = np.array(secondnn[i])
-
-        if len(others)==1: # we are on the border
-            idx, flag, _ = _find_in_sublists(hexagons,i)
-
-            if not flag: #didnt find i
-                idx, flag, _ = _find_in_sublists(hexagons,others[0])
-
-                if flag: #found others
-                    hexagons[idx].append( i )
-
-                else: #didnt find others
-                    hexagons.append( [i,others[0]] )
-
-            else: #found i, add others if not already in
-                if not np.isin(others[0],hexagons[idx]):
-                    hexagons[idx].append( others[0] )
-            
-
-        # add all sites
-        elif (others>i).all():
-            new_hex = []
-            new_hex.append( i )
-            for x in others:
-                new_hex.append( x )
-            hexagons.append(new_hex)
-
-        elif not (others>i).any():
-            pass
-
-        else :
-            idx, flag, _ = _find_in_sublists(hexagons,i)
-            if flag:
-                if not np.isin(np.max(others), hexagons[idx]):
-                    hexagons[idx].append( np.max(others) )
-
-    return hexagons

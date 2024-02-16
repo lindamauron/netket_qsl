@@ -192,3 +192,47 @@ class Torus(Kagome):
 
         return jnp.min(jnp.array([d1, d2p, d2m, d3p, d3m, d4pp, d4pm, d4mp, d4mm]))
 
+    def _construct_hexagons(self):
+        '''
+        Construct the container of hexagons for a torus lattice
+
+        lattice: lattice for which one wants the haxagons
+
+        returns: list of list of the sites sharing the same hexagon (no regular shape).
+        '''
+        def plaquette(idx,idy):
+            '''
+            Allows to find the index of the triangle with position (idx,idy) on the lattice (2d indices)
+            (idx, idy) : two-dimensional indices of the said plaquette
+            
+            return : 1d index (int) telling the number of the concerned triangle
+            '''
+            x = idx%self.xsize
+            y = idy%self.ysize
+            
+            return self.xsize*y + x
+
+        # container
+        sites = []
+
+        for y in range(0,self.ysize,2):
+            for x in range(self.xsize):
+                
+                # indices of the triangles we will consider for the hexagon
+                # always from bottom triangle in anti-clockwise way
+                # be careful since all rows are not the same 
+                if y%4==0:
+                    idx = [plaquette(x,y), plaquette(x+1,y+1), plaquette(x+1,y+2), plaquette(x,y+3), plaquette(x,y+2), plaquette(x,y+1)]
+                else:
+                    idx = [plaquette(x,y), plaquette(x,y+1), plaquette(x,y+2), plaquette(x,y+3), plaquette(x-1,y+2), plaquette(x-1,y+1)]
+                    
+                # All the atoms in the concerned triangles
+                triangles = [self.triangles[i]['atoms'] for i in idx]
+
+                # in each triangle, we select the atom we are looking for
+                atoms = [ triangles[0][2], triangles[1][1], triangles[2][0], triangles[3][0], triangles[4][1], triangles[5][2] ]
+                
+                # store result
+                sites.append( atoms )
+
+        return sites

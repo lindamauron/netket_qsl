@@ -10,7 +10,7 @@ from ._xperiodic import XPeriodic
 from ._yperiodic import YPeriodic
 from ._square import Square
 
-from ._debug import OneTriangle, TwoTriangles
 from ._ruby import Ruby
 from ._hole_ruby import HoleRuby
+from ._debug import OneTriangle, TwoTriangles, OneStar
 

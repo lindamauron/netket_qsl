@@ -8,7 +8,7 @@ class Hexagons:
         complete to eight: flag indicating whether we complete the hexagons to 8 sites (instead of 6by default)
                             this allows to include the hexagons of 5 sites
         '''
-        self.sites = sites.copy()
+        self._sites = sites.copy()
         
         filled_hex = []
         nonbord_hex = []
@@ -63,11 +63,11 @@ class Hexagons:
             for i,h in enumerate(sites):
                 if len(h) == 6:
                     new_hex = h.copy()
-                    new_hex.append( 0 )
-                    new_hex.append( 0 )
-
-                    filled_hex.append( new_hex )
                     nonbord_hex.append( new_hex )
+
+                    new_hex.append( 0 )
+                    new_hex.append( 0 )
+                    filled_hex.append( new_hex )
                 elif len(h) == 5:
                     new_hex = h.copy()
                     
@@ -122,37 +122,34 @@ class Hexagons:
 
                     filled_hex.append( new_hex )
 
-
-        self.filled = jnp.array(filled_hex)
-        self.nonbord = jnp.array(nonbord_hex)
+        self._filled = jnp.array(filled_hex)
+        self._nonbord = jnp.array(nonbord_hex)[:,:6]
         
         bulk = []
         for h in self.nonbord:
             # all sites around the hexagon
             triangles = np.array(neighbors(np.array(h))).reshape(-1)
 
-
             if np.isin(triangles, self.nonbord.reshape(-1)).all():
                 bulk.append( h.copy() )
                 
-        self.bulk = jnp.array(bulk)
-                
-                
-        """
-        self.distances = jnp.array([
-            [0,1,1,1],
-            [1,0,1,1],
-            [1,1,0,1],
-            [1,1,1,0]
-        ])
-        
-        self.positions = a*jnp.array([[ 0.5       ,  2.59807621],
-                                   [ 4.5       ,  2.59807621],
-                                   [-1.5       ,  6.06217783],
-                                   [ 2.5       ,  6.06217783]
-                                  ])
-        
-        self.relative_pos = jnp.array([2, 4, 0, 2, 4, 0, 3, 1, 5, 3, 1, 5, 2, 4, 0, 2, 4, 0, 3, 1, 5, 3, 1, 5])
-        self.hex_pos = jnp.take_along_axis(jnp.arange(24)//6, jnp.argsort(self.atoms.reshape(-1)), axis=0)
-        self.R = self.distances[self.hex_pos][...,self.hex_pos]
-        """
+        self._bulk = jnp.array(bulk)
+
+    def __getitem__(self, item):
+        return self.sites[item]
+    
+    @property
+    def sites(self):
+        return self._sites
+    
+    @property
+    def bulk(self):
+        return self._bulk
+    
+    @property
+    def filled(self):
+        return self._filled
+    
+    @property
+    def nonbord(self):
+        return self._nonbord
