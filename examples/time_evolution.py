@@ -12,7 +12,7 @@ import flax.linen as nn
 init = nn.initializers
 
 
-import netket_qsl as qsl
+from .. import netket_qsl as qsl 
 
 folder = ''
 
@@ -31,7 +31,7 @@ hi = nk.hilbert.Spin(1/2, N) # standard hilbert space
 
 # Now we define our variational model
 # chose anything in qsl.models, but for MF evolution, we need a model with an external mean-field (usuallly, JMF..)
-ma = qsl.models.JMF_inv(jastrow_init=init.constant(0), mf_init=init.constant(1), lattice=lattice, n_neighbors=lattice.n_distances )
+ma = qsl.models.JMF_inv(jastrow_init=init.constant(0), mf_init=init.constant(1), lattice=lattice )
 # sampler : 
 #sa = nk.sampler.ExactSampler(hi)
 sa = nk.sampler.MetropolisSampler(hi, qsl.rules.TriangleRuleQ(), n_chains=10 )

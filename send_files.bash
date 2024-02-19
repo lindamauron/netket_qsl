@@ -1,0 +1,1 @@
+find qsl -type f -not -path '*/__pycache__/*' -not -iname '*.DS_Store' -exec scp -r '{}' 'lmauron@jed.epfl.ch:QSL/{}' \;

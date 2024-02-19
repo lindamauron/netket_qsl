@@ -47,14 +47,11 @@ class RVB(nn.Module):
             'W', nn.initializers.constant(-self.infinity), (1,), self.param_dtype
         )
 
-
         chi = jnp.zeros((N,N))
         self.chi = chi.at[ (self.lattice.neighbors_distances==2) + (self.lattice.neighbors_distances==3) ].set(1)
 
-        
-        z = self.chi.sum(-1)
         self.phi = self.param(
-            'ϕ', custom_init(z=z,infinity=self.infinity), (N,2), self.param_dtype
+            'ϕ', custom_init(z=self.chi.sum(-1),infinity=self.infinity), (N,2), self.param_dtype
         )
 
 
@@ -66,6 +63,6 @@ class RVB(nn.Module):
         # compute the nearest-neighbor correlations
         corr = self.W/2 * jnp.einsum( '...i,ij,...j',x,self.chi,x )
 
-        mf = Psi_MF(jnp.array(self.phi), x)
+        mf = Psi_MF(self.phi, x)
         
         return corr + jnp.sum(jnp.log(mf), axis=-1)
