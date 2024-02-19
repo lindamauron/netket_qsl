@@ -1,6 +1,6 @@
 import jax.numpy as jnp
 
-from netket_qsl.observables.entropy._renyi2_fcts import _renyi2_bootstrap as bootstrap_entropies
+from qsl.observables.entropy._renyi2_fcts import _renyi2_bootstrap as bootstrap_entropies
 from netket.stats import Stats
 
 
