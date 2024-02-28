@@ -32,16 +32,16 @@ def dimer_probs_mf(step,log_data,phi,op):
     # vertices = lattice.vertices[lattice.non_border]
 
     # find out how many of each configuration is present in total
-    p0s = np.mean([np.prod( [1-ni[i] for i in v['atoms'] ]) for v in op.v])
+    p0s = np.array([np.prod( [1-ni[i] for i in v ]) for v in op.v])
     p0 = p0s.mean()
-    p1 = np.mean([p0s[k]*np.sum([ni[i]/(1-ni[i]) for i in v['atoms']]) for k,v in enumerate(op.v)])
-    p2 = np.mean([0.5*p0s[k]* np.sum([ ni[i]/(1-ni[i]) * np.sum([ni[j]/(1-ni[j]) if j!=i else 0 for j in v['atoms']]) for i in v['atoms']]) for k,v in enumerate(op.v)])
-    p3 = np.mean([ np.sum([ (1-ni[i]) * np.prod([ni[j] if j!=i else 1 for j in v['atoms']]) for i in v['atoms']]) for v in op.v])
-    p4 = np.mean([np.prod([ni[i] for i in v['atoms']]) for v in op.v])
+    p1 = np.mean([p0s[k]*np.sum([ni[i]/(1-ni[i]) for i in v]) for k,v in enumerate(op.v)])
+    p2 = np.mean([0.5*p0s[k]* np.sum([ ni[i]/(1-ni[i]) * np.sum([ni[j]/(1-ni[j]) if j!=i else 0 for j in v]) for i in v]) for k,v in enumerate(op.v)])
+    p3 = np.mean([ np.sum([ (1-ni[i]) * np.prod([ni[j] if j!=i else 1 for j in v]) for i in v]) for v in op.v])
+    p4 = np.mean([np.prod([ni[i] for i in v]) for v in op.v])
 
     # combine everything and return it normalized to have a probability
     p = np.array([p0, p1, p2, p3, p4])
-    probs = p/p.sum()
+    probs = p/p.sum() + 0j
 
 
     log_data['monomer'] = Stats(mean=probs[0], error_of_mean=0, variance=0)

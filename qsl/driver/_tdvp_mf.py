@@ -321,7 +321,7 @@ class TDVP_MF(AbstractVariationalDriver):
                 loggers = ()
             # if out is a path, create an overwriting Json Log for output
             elif isinstance(out, str):
-                loggers = (JsonLog(out, "w",save_params=False),)
+                loggers = (JsonLog(out+"MF", "w",save_params=False),)
             else:
                 loggers = _to_iterable(out)
         else:
@@ -329,10 +329,17 @@ class TDVP_MF(AbstractVariationalDriver):
             show_progress = False
 
         callbacks = _to_iterable(callback)
-        if isinstance(out, str):
-            callbacks = callbacks + (callback_pars(out), )
-        else:
-            callback = callbacks + (callback_pars(''), )
+        if type(callbacks)==tuple:
+            if isinstance(out, str):
+                callbacks = callbacks + (callback_pars(out), )
+            else:
+                callbacks = callbacks + (callback_pars(''), )
+        elif type(callbacks)==list:
+            if isinstance(out, str):
+                callbacks.append( callback_pars(out) )
+            else:
+                # callbacks.append( callback_pars('') )
+                pass
 
         callback_stop = False
 
