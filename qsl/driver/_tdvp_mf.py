@@ -21,7 +21,6 @@ from netket.logging.json_log import JsonLog
 from netket.utils import mpi
 from netket.vqs import VariationalState
 from netket.stats import Stats
-from netket.driver.vmc_common import info
 from netket.vqs import (
     VariationalState,
 )
@@ -158,21 +157,12 @@ class TDVP_MF(AbstractVariationalDriver):
     def __repr__(self):
         return (
             "TDVP_MF("
+            + f"\n  generator = {self._generator_repr},"
+            + f"\n  integrator = {self._integrator},"
             + f"\n  time = {self.t},"
             + f"\n  state = {self.state}"
             +"\n)"
         )
-
-    def info(self, depth=0):
-        lines = [
-            "{}: {}".format(name, info(obj, depth=depth + 1))
-            for name, obj in [
-                ("generator    ", self._generator_repr),
-                ("integrator      ", self._integrator),
-                ("State          ", self.state),
-            ]
-        ]
-        return "\n{}".format(" " * 3 * (depth + 1)).join([str(self)] + lines)
 
     def _forward(self,t):
         """
