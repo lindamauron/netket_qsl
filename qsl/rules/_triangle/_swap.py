@@ -33,7 +33,6 @@ def _flip_one_swap_(s,index):
 
     return s
 
-@nk.utils.struct.dataclass
 class TriangleRuleSwap(RestrictedRule):
     r'''
     A transition rule acting on one triangle of the lattice.

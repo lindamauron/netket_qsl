@@ -32,7 +32,6 @@ def _flip_one_Q_(s, index):
 
     return s_prime
 
-@nk.utils.struct.dataclass
 class TriangleRuleQ(RestrictedRule):
     r'''
     A transition rule acting on one triangle of the lattice.
@@ -49,7 +48,6 @@ class TriangleRuleQ(RestrictedRule):
        |ggr> -> |grg>
 
     '''
-    
 
     def transition(self, sampler: "sampler.MetropolisSampler", machine: nn.Module, params: PyTree, sampler_state: "sampler.SamplerState", key: PRNGKeyT, σ: jnp.ndarray) -> Tuple[jnp.ndarray, Optional[jnp.ndarray]]:
         r'''

@@ -18,7 +18,6 @@ from .._restricted import RestrictedRule
 from .base import _global_transition_batch
 
 
-@nk.utils.struct.dataclass
 class HexagonalRule(nk.sampler.rules.MetropolisRule):
     r"""
     Global rule for which one randomly chooses an hexagon of the lattice and applies the Q operator. 
@@ -28,15 +27,15 @@ class HexagonalRule(nk.sampler.rules.MetropolisRule):
     hexs: filled hexagons of the lattice (jax-compatible)
     """
     hexs : jnp.ndarray
-    def __pre_init__(self,lattice:_Kagome,*args,**kwargs):
+    def __init__(self,lattice:_Kagome,*args,**kwargs):
         """
         Prepares the class attribute hexs
         """
         warnings.warn(dedent('This sampling rule is highly not ergodic (except for thermalized RVB states).'),
                       category=DeprecationWarning
                       )
-        kwargs['hexs'] = jnp.array(lattice.hexagons.filled)
-        return args, kwargs
+        self.hexs = jnp.array(lattice.hexagons.filled)
+        super().__init__(*args, **kwargs)
     
 
     def transition(self, sampler: "sampler.MetropolisSampler", machine: nn.Module, params: PyTree, sampler_state: "sampler.SamplerState", key: PRNGKeyT, σ: jnp.ndarray) -> Tuple[jnp.ndarray, Optional[jnp.ndarray]]:
@@ -85,7 +84,6 @@ class HexagonalRule(nk.sampler.rules.MetropolisRule):
         return f'HexagonalRule(# of hexagons: {self.hexs.shape[0]})'
 
 
-@nk.utils.struct.dataclass
 class RestrictedHexagonalRule(RestrictedRule):
     r'''
     A transition rule acting on the hexagons of the lattice.
@@ -97,15 +95,15 @@ class RestrictedHexagonalRule(RestrictedRule):
     hexs: filled hexagons of the lattice (jax-compatible)
     '''
     hexs : jnp.ndarray
-    def __pre_init__(self,lattice:_Kagome,*args,**kwargs):
+    def __init__(self,lattice:_Kagome,*args,**kwargs):
         """
         Prepares the class attribute hexs
         """
         warnings.warn(dedent('This sampling rule is highly not ergodic (except for thermalized RVB states).'),
                       category=DeprecationWarning
                       )
-        kwargs['hexs'] = jnp.array(lattice.hexagons.filled)
-        return args, kwargs
+        self.hexs = jnp.array(lattice.hexagons.filled)
+        super().__init__(*args, **kwargs)
 
 
     def transition(self, sampler: "sampler.MetropolisSampler", machine: nn.Module, params: PyTree, sampler_state: "sampler.SamplerState", key: PRNGKeyT, σ: jnp.ndarray) -> Tuple[jnp.ndarray, Optional[jnp.ndarray]]:

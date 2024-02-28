@@ -14,10 +14,13 @@ from .._restricted import RestrictedRule
 from .._triangle._Q import _flip_one_Q_
 
 
-from netket.utils import struct
-@struct.dataclass
-class MixedRuleState:
+from netket.sampler import SamplerState
+class MixedRuleState(SamplerState):
     probs: jnp.ndarray
+
+    def __init__(self, probs):
+        self.probs = probs
+        super().__init__()
 
 
 @jit
@@ -50,7 +53,6 @@ def _restr_local_transition_batch(key, σ, hexs):
     return σ
 
 
-@nk.utils.struct.dataclass
 class RestrictedMixedRule(RestrictedRule):
     '''
     Transition rule that mixes local moves (triangular spin flip) and global moves (Q operator on an hexagon) on the restricted space with at most one excitation per triangle
@@ -71,11 +73,11 @@ class RestrictedMixedRule(RestrictedRule):
     hexs : jnp.ndarray
     initial_probs: jnp.ndarray
 
-    def __pre_init__(self,lattice,probs,*args,**kwargs):
+    def __init__(self,*args,lattice,probs,**kwargs):
         """
         Prepares the class attribute hexs and probs
         """
-        kwargs['hexs'] = jnp.array(lattice.hexagons.filled)
+        self.hexs = jnp.array(lattice.hexagons.filled)
         ps = jnp.asarray(probs)
 
         if len(ps) != 2:
@@ -90,8 +92,8 @@ class RestrictedMixedRule(RestrictedRule):
                 f"{jnp.sum(ps)}."
             )
         
-        kwargs['initial_probs'] = ps/ps.sum()
-        return args, kwargs
+        self.initial_probs = ps/ps.sum()
+        super().__init__(*args, **kwargs)
 
     def init_state(self, sampler, machine, params, key):
         return MixedRuleState(probs=self.initial_probs)

@@ -30,7 +30,6 @@ def _flip_one_unchanged_(s,index):
 
     return s
 
-@nk.utils.struct.dataclass
 class TriangleRuleUnchanged(RestrictedRule):
     r'''
     A transition rule acting on one triangle of the lattice.

@@ -45,7 +45,6 @@ def _mask(key, n_triangles):
     # does the mask on all the triangles
     return vmap(_one_tri)(indices).reshape(-1) #(N,)
 
-@nk.utils.struct.dataclass
 class RestrictedRule(nk.sampler.rules.MetropolisRule):
     '''
     A super class of rules working on the restricted Hilbert space \{ |000>, |100>, |010>, |001> \}.
