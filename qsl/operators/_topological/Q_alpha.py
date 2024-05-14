@@ -1,14 +1,11 @@
 from typing import Tuple
 from functools import partial
 
-import numpy as np
-import jax
-from jax import vmap, jit
+from jax import jit
 import jax.numpy as jnp
 
-from netket.utils.types import DType as _DType
 
-from ...lattice._utils import neighbors
+from ...lattice import neighbors
 from .base import TopoOperator
 
 

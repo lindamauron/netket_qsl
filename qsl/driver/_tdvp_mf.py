@@ -328,7 +328,7 @@ class TDVP_MF(AbstractVariationalDriver):
             if isinstance(out, str):
                 callbacks.append( callback_pars(out) )
             else:
-                # callbacks.append( callback_pars('') )
+                callbacks.append( callback_pars('') )
                 pass
 
         callback_stop = False

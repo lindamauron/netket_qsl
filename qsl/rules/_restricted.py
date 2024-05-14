@@ -77,7 +77,8 @@ class RestrictedRule(nk.sampler.rules.MetropolisRule):
         
         # masks on where to randomly put excited states respecting the constraint
         masks = vmap(_mask, in_axes=(0,None))(keys,int(N/3)) #(Ns,N)
-        σ[masks] = 1 
+        σ = vmap(jnp.where, (0,0,None))(masks, σ, 1.0)
+        # σ[masks] = 1 
 
         # return the correctly shaped chain
         return σ

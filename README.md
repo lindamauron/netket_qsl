@@ -72,14 +72,14 @@ N = lattice.N
 hi = nk.hilbert.Spin(1/2, N) # standard hilbert space
 
 # Now we define our variational model
-ma = qsl.models.JMF_inv(jastrow_init=init.constant(0), mf_init=init.constant(1), lattice=lattice, n_neighbors=lattice.n_distances )
+ma = qsl.models.JMF_inv(jastrow_init=init.constant(0), mf_init=init.constant(1), lattice=lattice )
 sa = nk.sampler.MetropolisSampler(hi, qsl.rules.TriangleRuleQ(), n_chains=72 )
 vs = nk.vqs.MCState(sa, ma, n_samples_per_rank=1500, n_discard_per_chain=100 ) #, chunk_size=32)
 
 
 # Define the Hamiltonian of the system
 frequencies = qsl.frequencies.Cubic(2.5,1.4,-8,9.4)
-H = qsl.operators.Hamiltionian(hi,lattice, frequencies)
+H = qsl.operators.RydbergHamiltonian(hi,lattice, frequencies)
 
 # The observables
 n_op = qsl.operators.r_density(hi,lattice)
@@ -90,40 +90,43 @@ obs = {}
 obs['n'] = n_op
 obs['P'] = P_op
 obs['Q'] = Q_op
+DimerProbs = qsl.observables.DimerProbabilities(hi,lattice,bulk=False)
 
 # The callbacks
 cbs = []
 if not sa.is_exact : 
     cbs.append( qsl.callbacks.callback_acc ) # acceptance if we have a MCMC sampler
 cbs.append( qsl.callbacks.callback_omega_delta ) # writes down the value of the frequencies at each iteration
-cbs.append( qsl.callbacks.callback_dimerprobs(lattice) ) # dimer probabilities
+cbs.append( qsl.callbacks.callback_dimerprobs(DimerProbs) ) # dimer probabilities
 
-
-# The loggers 
-logmf = nk.logging.JsonLog(folder+'MF', save_params=False)
-logvs = qsl.logging.CompleteStateLog(folder+'states', save_every=10, tar=False)
+## The callbacks
+cbs = []
+if not sa.is_exact : 
+    cbs.append( qsl.callbacks.callback_acc ) # acceptance if we have a MCMC sampler
+cbs.append( qsl.callbacks.callback_omega_delta ) # writes down the value of the frequencies at each iteration
+cbs.append( qsl.callbacks.callback_dimerprobs(DimerProbs) ) # dimer probabilities
 
 T_MF = 0.2
 step=1e-2
-times = np.linspace(0.0, T_MF, np.rint(T_MF/step+1).astype(int), endpoint=True)
-
 
 # Define the MF driver first
 te_mf = qsl.driver.TDVP_MF(H,vs,t0=0.0, integrator=qsl.driver.RK4(1e-3))
-
-
+## perform the time-evolution saving the observable at every `tstop` time
 te_mf.run(
     T=T_MF,
-    out=[logmf,logvs],
+    out=folder,
     obs=obs,
-    tstops=times,
+    # tstops=times,
     show_progress=True,
     callback=cbs,
 )
 
-
+## The loggers
+logmf = json.load(open(folder+'MF.log'))
 logtdvp = nk.logging.JsonLog(folder+'TDVP', save_params=False)
-# And once this is done, we do the normal t-VMC
+logvs = nk.logging.StateLog(folder+'_states', save_every=1, tar=False)
+
+## And once this is done, we do the normal t-VMC
 te = nkx.TDVP(
     H,
     variational_state=vs,
@@ -133,16 +136,14 @@ te = nkx.TDVP(
     error_norm="qgt",
     linear_solver=partial(nk.optimizer.solver.svd, rcond=1e-5 )
 )
-
-
-# perform the time-evolution saving the observable at every `tstop` time
+## perform the time-evolution saving the observable at every `tstop` time
 te.run(
-    T=frequencies.sweep_time-T_MF,
+    T=T-T_MF,
     out=[logtdvp,logvs],
     show_progress=True,
     obs=obs,
-    #tstops=times,
     callback=cbs
 )
+
 
 ```

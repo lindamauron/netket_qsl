@@ -38,9 +38,10 @@ hi = nk.hilbert.Spin(1/2, N) # standard hilbert space
 ma = qsl.models.JMF_inv(jastrow_init=init.constant(0), mf_init=init.constant(1), lattice=lattice )
 ## sampler : 
 #sa = nk.sampler.ExactSampler(hi)
-sa = nk.sampler.MetropolisSampler(hi, qsl.rules.TriangleRuleQ(), n_chains=10 )
-#sa = nk.sampler.MetropolisSampler(hi, qsl.rules.HexagonalRule(), n_chains=10 )
-#sa = nk.sampler.MetropolisSampler(hi, qsl.rules.RestrictedMixedRule(lattice.hexagons, p_global=0.5), n_chains=10 )
+rule = qsl.rules.TriangleRuleQ()
+# rule = qsl.rules.HexagonalRule(lattice=lattice)
+# rule = qsl.rules.RestrictedMixedRule(lattice=lattice, probs=[0.5,0.5])
+sa = nk.sampler.MetropolisSampler(hi, rule, n_chains=10 )
 ## variational state
 vs = nk.vqs.MCState(sa, ma, n_samples_per_rank=1500, n_discard_per_chain=0 ) #, chunk_size=32)
 
