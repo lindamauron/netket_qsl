@@ -13,6 +13,7 @@ import jax.numpy as jnp
 from jax import jit, vmap
 from flax import linen as nn
 
+from ..hilbert._triangle_space import generate_triangle_state as _random_state
 
 #################################################################################################################################
 @partial(jit, static_argnums=1)
@@ -63,25 +64,8 @@ class RestrictedRule(nk.sampler.rules.MetropolisRule):
         key: The PRNGKey to use to generate the random state.
         
         returns : σ the batch of spin chains
-        '''                            
-        size = sampler.n_batches
-
-        Ns = int(np.prod(size))
-        N = int(sampler.hilbert.size)
-
-        # start with all ground states
-        σ = -np.ones( (Ns, N) )
-
-        # Random keys
-        keys = jax.random.split( key, Ns )
-        
-        # masks on where to randomly put excited states respecting the constraint
-        masks = vmap(_mask, in_axes=(0,None))(keys,int(N/3)) #(Ns,N)
-        σ = vmap(jnp.where, (0,0,None))(masks, σ, 1.0)
-        # σ[masks] = 1 
-
-        # return the correctly shaped chain
-        return σ
+        '''
+        return _random_state(sampler.hilbert, key, sampler.n_batches, sampler.dtype)
     
     @abc.abstractmethod
     def transition(self, sampler: "sampler.MetropolisSampler", machine: nn.Module, params: PyTree, sampler_state: "sampler.SamplerState", key: PRNGKeyT, σ: jnp.ndarray) -> Tuple[jnp.ndarray, Optional[jnp.ndarray]]:

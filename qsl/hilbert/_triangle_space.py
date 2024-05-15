@@ -4,7 +4,7 @@ from functools import partial
 
 from netket.hilbert.custom_hilbert import CustomHilbert
 from netket.utils.dispatch import dispatch
-
+from netket.utils import StaticRange
 import jax 
 import jax.numpy as jnp
 import jax.random as rnd
@@ -45,11 +45,7 @@ class TriangleHilbertSpace(CustomHilbert):
             n_triangles = 3*jnp.arange(N//3)
             self.triangles = jnp.array([n_triangles, n_triangles+1, n_triangles+2]).T
             
-        super().__init__([-1.0, 1.0], N, vmap(self.constraint_fn) )
-
-
-        
-        
+        super().__init__(StaticRange(start=-1, step=2, length=2), N, vmap(self.constraint_fn) )
 
     def constraint_fn(self, state):
         '''
@@ -104,13 +100,11 @@ def _mask(key, n_triangles):
     return vmap(_one_tri)(indices).reshape(-1)
 
 
-@dispatch
-def random_state(hilb:TriangleHilbertSpace, key, batches: int, dtype):
-
-    N = int(hilb.size)
+def generate_triangle_state(hi, key, batches, dtype):
+    N = int(hi.size)
 
     # start with all ground states
-    σ = -np.ones( (batches, N) )
+    σ = np.ones( (batches, N) )
 
 
     keys = jax.random.split( key, batches )
@@ -118,8 +112,11 @@ def random_state(hilb:TriangleHilbertSpace, key, batches: int, dtype):
     # for each triangle, find the mask (i.e. equal possibility to have |ggg>, |rgg>, |grg>, |ggr>)
     masks = vmap(_mask, in_axes=(0,None))(keys,int(N/3))
 
-    σ[masks] = 1 
+    σ = jnp.where(masks, σ, -1.0)
 
     # return the correctly shaped chain
-    return σ
-    
+    return jnp.asarray(σ, dtype=dtype)
+
+@dispatch(precedence=10)
+def random_state(hilb: TriangleHilbertSpace, key, batches: int, *, dtype):
+    return generate_triangle_state(hilb, key, batches, dtype)
