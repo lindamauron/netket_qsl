@@ -1,5 +1,22 @@
 # Quantum Spin Liquid simulation
-This package allows for the simulation of the article "Variational Simulation of a topological spin liquid"
+This package allows for the simulation of the article "Variational Simulation of a topological spin liquid". 
+It currently runs under Netket 3.12. 
+
+
+## Convention
+We start by simply expliciting the convention we used in terms of basis, so that everything is clear. 
+
+The Rydberg Hilbert space is spanned by the local states $| g\rangle, |r\rangle$, which we map to the "occupation" convention $|g\rangle = |0\rangle$ and $|r\rangle = |1\rangle$. 
+
+Inspired by the notation in Semeghini et al., we use 
+$$\hat \sigma^z = 1-2 \hat n = |g\rangle\langle g| - |r\rangle\langle r| = |0\rangle\langle 0| - |1\rangle\langle 1|.$$
+
+It follows that $$\hat\sigma^y = i|1\rangle\langle 0| - i |0\rangle\langle 1| = i|r\rangle\langle g| - i |g\rangle\langle r|$$, and the $\sigma^x$ as usual. 
+The annhililation opperators are defined as $$\hat\sigma^+ = (\hat\sigma^x+i\hat\sigma^y)/2 = |0\rangle\langle 1| = |g\rangle\langle r|$$ and $$\hat\sigma^- = (\hat\sigma^x-i\hat\sigma^y)/2 = |1\rangle\langle 0| = |r\rangle\langle g|$$ counter-intuitively. 
+
+Netket's convention states that $\hat\sigma^z = |-1\rangle\langle -1| - |+1\rangle\langle +1|$, from which we identify $$|g\rangle = |0\rangle = |-1\rangle.$$
+All the rest follows accordingly. Simply notice that the value $z$ in the vectors is defined such that $z=-1 \iff |\sigma\rangle = |g\rangle$. 
+
 
 ## Main classes : 
 - **lattice** : used to describe the Kagome lattice of the experiment. Multiple shapes are possible (rectangular or ruby) with multiple boundary conditions for the rectangular-shaped ones. 

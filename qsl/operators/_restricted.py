@@ -83,7 +83,7 @@ def _restricted_sigmam(
     
     index = 2**(2-i%3)
     
-    # The matrix representing σ^+ in the retricted basis (put coefficients outside space to 0)
+    # The matrix representing σ^- in the retricted basis (put coefficients outside space to 0)
     D = np.zeros((8,8), dtype=dtype)
     D[index,0] = 1.0
     
@@ -109,7 +109,7 @@ def _restricted_sigmap(
     
     index = 2**(2-i%3)
     
-    # The matrix representing σ^- in the retricted basis (put coefficients outside space to 0)
+    # The matrix representing σ^+ in the retricted basis (put coefficients outside space to 0)
     D = np.zeros((8,8), dtype=dtype)
     D[0,index] = 1.0
     

@@ -49,7 +49,7 @@ def Z(hilbert:_SpinHilbert, i:int, restricted:bool=True) -> _LocalOperator:
 
 def Y(hilbert:_SpinHilbert, i:int, restricted:bool=True) -> _LocalOperator:
     '''
-    Builds the :math:`σ^y=i|g><r|-i|r><g|` operator acting on the i-th site of the (restricted) Hilbert space `hilbert`
+    Builds the :math:`σ^y=i|r><g|-i|g><r|` operator acting on the i-th site of the (restricted) Hilbert space `hilbert`
 
     hilbert : hilbert space of the system
     i : site on which to apply the operator
