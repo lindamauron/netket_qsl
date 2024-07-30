@@ -39,11 +39,11 @@ ma = qsl.models.JMF_inv(jastrow_init=init.constant(0), mf_init=init.constant(1),
 ## sampler : 
 #sa = nk.sampler.ExactSampler(hi)
 rule = qsl.rules.TriangleRuleQ()
-# rule = qsl.rules.HexagonalRule(lattice=lattice)
+# rule = qsl.rules.HexagonalRule(lattice=lattice) # not ergodic
 # rule = qsl.rules.RestrictedMixedRule(lattice=lattice, probs=[0.5,0.5])
 sa = nk.sampler.MetropolisSampler(hi, rule, n_chains=10 )
 ## variational state
-vs = nk.vqs.MCState(sa, ma, n_samples_per_rank=1500, n_discard_per_chain=0 ) #, chunk_size=32)
+vs = nk.vqs.MCState(sa, ma, n_samples_per_rank=1500, n_discard_per_chain=10 ) #, chunk_size=32)
 
 
 ## Define the Hamiltonian of the system

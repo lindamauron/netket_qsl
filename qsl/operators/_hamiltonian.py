@@ -127,7 +127,7 @@ class Rydberg_Hamiltionian:
         Ω, Δ = self.frequencies(t)
 
         # our operator
-        return -Ω/2*self.Xtot_op - Δ*self.N_op + Ω*self.V_op
+        return -Ω/2*self.Xtot_op - Δ*self.N_op + self.frequencies.Ωf*self.V_op
     
     def of_delta(self, d:float) -> _DiscreteOperator:
         '''

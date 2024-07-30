@@ -504,18 +504,18 @@ class Kagome:
         return : ndarray (N,N) containing the neighbor distances d[i,j] = neighbor n
         '''
         if self._neighbors_distances is None:
-            # gives the physical distances of neighbor i
-            neighbors = np.unique(np.rint((self.distances/self.a)**2).reshape(-1), axis=-1)
-
-            # now the distances of each site pairs
+            # the distances of each site pairs
             dist = np.rint((self.distances/self.a)**2)
+
+            # gives the physical distances of neighbor i
+            neighbors = np.unique(dist.reshape(-1), axis=-1)
 
             # find which it corresponds to to know what neighbor they are
             neighbors_distances = np.zeros((self.N,self.N), dtype=int)
             for i in range(self.N):
-                for j in range(self.N):
+                for j in range(i+1, self.N):
                     neighbors_distances[i,j] = np.argmin( np.abs(dist[i,j] - neighbors) )
-            self._neighbors_distances = neighbors_distances
+            self._neighbors_distances = (neighbors_distances+neighbors_distances.T) #symmetrize
 
         return self._neighbors_distances
 
